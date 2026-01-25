@@ -1,0 +1,46 @@
+node_modules
+.env
+.env.local
+
+# Hardhat files
+/cache
+/artifacts
+
+# TypeChain files
+/typechain
+/typechain-types
+
+# solidity-coverage files
+/coverage
+/coverage.json
+
+# Hardhat Ignition default folder for deployments against a local node
+ignition/deployments/chain-31337
+
+# Build files
+/build
+
+# ZK circuit compiled files (optional - pot fi regenerate)
+*.r1cs
+*.sym
+*.wasm
+*.zkey
+*.wtns
+
+# Powers of Tau (fisier mare, se descarca separat)
+/ptau
+
+# Frontend
+frontend/node_modules
+frontend/.next
+frontend/out
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
