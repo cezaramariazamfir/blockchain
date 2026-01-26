@@ -1,483 +1,321 @@
-# Plan de Implementare - Sistem de Identitate Academică Anonimă cu ZKPs
+# Plan de Implementare - Sistem de Identitate Academica Anonima cu ZKPs
 
 ## Descrierea Proiectului
 
 **Echipa:** Dima Cristian, Zamfir Cezara, Muscalu David - Grupa 341
 
-**Tema:** Sistem de identitate academică anonimă bazat pe Zero-Knowledge Proofs (ZKPs) care permite unui student să demonstreze proprietăți despre statutul său academic fără a dezvălui date personale.
+**Tema:** Sistem de identitate academica anonima bazat pe Zero-Knowledge Proofs (ZKPs) care permite unui student sa demonstreze proprietati despre statutul sau academic fara a dezvalui date personale.
+
+**Deadline:** 4 zile (26-29 Ianuarie 2026)
 
 ---
 
-## Arhitectura Sistemului
+## Plan pe 4 Zile
+
+### ZIUA 1 (26 Ian) - Smart Contracts ✅ COMPLETAT
+
+| Task | Responsabil | Status |
+|------|-------------|--------|
+| Creare `SoulboundToken.sol` cu toate cerintele | | [x] |
+| Creare `IdentityRegistry.sol` pentru Merkle roots | | [x] |
+| Creare `AcademicCredentials.sol` - contract principal | | [x] |
+| Teste Hardhat pentru contracte (10 teste) | | [x] |
+| Deploy local + verificare | | [x] |
+
+**Cerinte acoperite Ziua 1:**
+- [x] Mappings si address
+- [x] Events
+- [x] Modifiers
+- [x] Functii: external, pure, view, payable
+- [x] Transfer ETH
+- [x] Interactiune intre contracte
+- [x] Librarii OpenZeppelin
+
+---
+
+### ZIUA 2 (27 Ian) - Circuit ZK + Verifier
+
+| Task | Responsabil | Status |
+|------|-------------|--------|
+| Creare circuit `merkle_membership.circom` cu Merkle tree | | [ ] |
+| Compilare circuit + generare Verifier.sol | | [ ] |
+| Integrare Verifier in AcademicCredentials | | [ ] |
+| Activare zkVerificationEnabled + teste ZK | | [ ] |
+
+**Cerinte acoperite Ziua 2:**
+- [x] Zero-Knowledge Proofs (bonus complexitate)
+- [x] Poseidon hash
+- [x] Merkle Tree membership proof
+- [x] Nullifier anti-Sybil
+
+---
+
+### ZIUA 3 (28 Ian) - Frontend Web3
+
+| Task | Responsabil | Status |
+|------|-------------|--------|
+| Setup wagmi + RainbowKit | | [ ] |
+| Pagina Connect Wallet + afisare info cont | | [ ] |
+| Pagina Mint Credential (form + tranzactie) | | [ ] |
+| Pagina View Credentials (SBT-uri detinute) | | [ ] |
+| Tratare stari tranzactii (pending, success, error) | | [ ] |
+
+**Cerinte acoperite Ziua 3:**
+- [x] Librarie web3 + Provider
+- [x] Informatii conturi (adresa, balance)
+- [x] Initiere tranzactii
+- [x] Tratare events
+- [x] Control stare tranzactii
+
+---
+
+### ZIUA 4 (29 Ian) - Integrare + Deploy + Demo
+
+| Task | Responsabil | Status |
+|------|-------------|--------|
+| Deploy pe Sepolia testnet | | [ ] |
+| Conectare frontend la Sepolia | | [ ] |
+| Testare end-to-end | | [ ] |
+| Fix bugs + polish | | [ ] |
+| Pregatire demo/prezentare | | [ ] |
+
+**Cerinte acoperite Ziua 4:**
+- [x] Deploy pe retea de test
+- [x] Documentatie
+
+---
+
+## Arhitectura Simplificata
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         Frontend (React/Next.js)                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
-│  │   Wallet    │  │   Proof     │  │    SBT      │  │   Admin     │ │
-│  │  Connect    │  │  Generator  │  │   Viewer    │  │   Panel     │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Web3 Layer (ethers.js)                        │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Smart Contracts (Solidity)                      │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
-│  │  Verifier   │  │   Identity  │  │  Soulbound  │  │   Merkle    │ │
-│  │  (Groth16)  │  │   Registry  │  │    Token    │  │    Tree     │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      ZK Circuits (Circom)                            │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────────┐  │
-│  │ Membership      │  │  Range Proof    │  │  Nullifier          │  │
-│  │ Proof Circuit   │  │  (grade >= X)   │  │  Generator          │  │
-│  └─────────────────┘  └─────────────────┘  └─────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    Frontend (Next.js)                    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │Connect Wallet│  │Mint Credential│  │View My SBTs │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                  Smart Contracts                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   Verifier   │◄─│  Academic    │─►│  Soulbound   │  │
+│  │  (Groth16)   │  │ Credentials  │  │    Token     │  │
+│  └──────────────┘  └──────┬───────┘  └──────────────┘  │
+│                           │                             │
+│                           ▼                             │
+│                    ┌──────────────┐                     │
+│                    │  Identity    │                     │
+│                    │  Registry    │                     │
+│                    │(Merkle Roots)│                     │
+│                    └──────────────┘                     │
+└─────────────────────────────────────────────────────────┘
+                           ▲
+                           │
+┌─────────────────────────────────────────────────────────┐
+│                   ZK Circuit (Circom)                    │
+│    merkle_membership.circom - Merkle Tree + Nullifier    │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Stack Tehnologic
-
-### 1. Smart Contracts & Blockchain
-
-| Tehnologie | Versiune | Scop |
-|------------|----------|------|
-| **Solidity** | ^0.8.20 | Limbaj smart contracts |
-| **Hardhat** | ^2.19.0 | Framework dezvoltare & testare |
-| **OpenZeppelin** | ^5.0.0 | Librării securizate (ERC721, Access Control) |
-| **ethers.js** | ^6.9.0 | Interacțiune blockchain |
-
-### 2. Zero-Knowledge Proofs
-
-| Tehnologie | Versiune | Scop |
-|------------|----------|------|
-| **Circom** | 2.1.6 | Limbaj pentru circuite ZK |
-| **SnarkJS** | ^0.7.0 | Generare/verificare proofs |
-| **circomlib** | ^2.0.5 | Librării Circom (Poseidon, MerkleTree) |
-
-### 3. Frontend
-
-| Tehnologie | Versiune | Scop |
-|------------|----------|------|
-| **Next.js** | ^14.0.0 | Framework React cu SSR |
-| **TypeScript** | ^5.3.0 | Type safety |
-| **Tailwind CSS** | ^3.4.0 | Styling |
-| **wagmi** | ^2.0.0 | React hooks pentru Web3 |
-| **viem** | ^2.0.0 | Client Ethereum modern |
-| **RainbowKit** | ^2.0.0 | Wallet connection UI |
-
-### 4. Development & Testing
-
-| Tehnologie | Scop |
-|------------|------|
-| **Chai/Mocha** | Testing smart contracts |
-| **Hardhat Network** | Rețea locală Ethereum |
-| **Sepolia Testnet** | Testnet public |
-
----
-
-## Structura Proiectului
+## Structura Fisiere
 
 ```
 blockchain/
-├── circuits/                    # Circuite Circom
-│   ├── membership.circom        # Proof membership în Merkle tree
-│   ├── rangeProof.circom        # Verificare grade >= threshold
-│   ├── nullifier.circom         # Generare nullifier anti-Sybil
-│   └── lib/                     # Librării helper
-│       └── poseidon.circom
-├── contracts/                   # Smart Contracts Solidity
-│   ├── Verifier.sol             # Verificator SNARK generat
-│   ├── IdentityRegistry.sol     # Registru identități & Merkle roots
-│   ├── SoulboundToken.sol       # ERC721 non-transferabil
-│   ├── AcademicCredentials.sol  # Contract principal
-│   └── interfaces/              # Interfețe
-│       ├── IVerifier.sol
-│       └── ISoulboundToken.sol
-├── frontend/                    # Aplicație Next.js
-│   ├── src/
-│   │   ├── app/                 # App Router pages
-│   │   ├── components/          # Componente React
-│   │   ├── hooks/               # Custom hooks Web3
-│   │   ├── lib/                 # Utilități & ZK helpers
-│   │   └── contracts/           # ABI-uri & adrese
-│   └── public/
-│       └── zk/                  # Circuit artifacts (wasm, zkey)
-├── scripts/                     # Scripturi deployment & setup
-│   ├── deploy.ts
-│   ├── compile-circuits.sh
-│   └── setup-merkle.ts
-├── test/                        # Teste
-│   ├── contracts/
-│   └── circuits/
-├── hardhat.config.ts
-├── package.json
-└── PLAN_PROIECT.md
+├── circuits/
+│   └── merkle_membership.circom  # Circuit ZK cu Merkle tree
+├── contracts/
+│   ├── SoulboundToken.sol        # ERC721 non-transferabil (Soulbound)
+│   ├── IdentityRegistry.sol      # Merkle roots + verificare on-chain
+│   ├── AcademicCredentials.sol   # Contract principal + issuanceFee
+│   └── Verifier.sol              # Generat din circuit (Ziua 2)
+├── frontend/
+│   └── src/
+│       ├── app/
+│       │   ├── page.tsx          # Home + Connect
+│       │   ├── mint/page.tsx     # Mint credential
+│       │   └── view/page.tsx     # View SBTs
+│       └── components/
+├── test/
+│   └── AcademicSystem.test.ts    # 10 teste Hardhat
+├── scripts/
+│   └── deploy.ts                 # Script deployment
+└── ptau/                         # Powers of Tau (Ziua 2)
 ```
 
 ---
 
-## Pași de Implementare
+## Smart Contracts - Cerinte Obligatorii Acoperite
 
-### Faza 1: Setup Mediu de Dezvoltare
+### SoulboundToken.sol ✅
+```
+✓ mapping(uint256 => uint256) tokenPredicates - predicat per token
+✓ mapping(bytes32 => bool) usedNullifiers - nullifiers folosite
+✓ event CredentialMinted(address indexed to, uint256 indexed tokenId, uint256 predicateId)
+✓ modifier onlyMinter() - doar minter-ul poate mint
+✓ modifier nullifierNotUsed(bytes32) - previne refolosirea
+✓ function mint(address, uint256, bytes32) external - mint SBT
+✓ function isNullifierUsed(bytes32) view - verificare nullifier
+✓ function getTokenPredicate(uint256) view - predicat per token
+✓ function _update() override - blocheaza transferuri (Soulbound)
+✓ Mostenire ERC721 (OpenZeppelin)
+```
 
-- [ ] **1.1** Inițializare proiect Node.js
-- [ ] **1.2** Configurare Hardhat cu TypeScript
-- [ ] **1.3** Instalare dependențe Solidity (OpenZeppelin)
-- [ ] **1.4** Instalare Circom și SnarkJS
-- [ ] **1.5** Setup Next.js pentru frontend
-- [ ] **1.6** Configurare wallet MetaMask pentru testare
+### IdentityRegistry.sol ✅
+```
+✓ mapping(uint256 => bytes32) merkleRoots - Merkle root per predicat
+✓ mapping(uint256 => bytes32[]) rootHistory - istoric roots
+✓ event MerkleRootSet(uint256 indexed predicateId, bytes32 merkleRoot)
+✓ modifier onlyAdmin()
+✓ function setMerkleRoot(uint256, bytes32) external - admin seteaza root
+✓ function getMerkleRoot(uint256) view - returneaza root activ
+✓ function verifyMerkleProof(bytes32, bytes32[], uint256[], uint256) view
+  - verificare on-chain pentru testare (in productie se face in circuit)
+```
 
-### Faza 2: Implementare Circuite ZK (Circom)
-
-- [ ] **2.1** Circuit Poseidon hash pentru commitment
-- [ ] **2.2** Circuit Merkle Tree membership proof
-- [ ] **2.3** Circuit Range Proof pentru verificare notă
-- [ ] **2.4** Circuit Nullifier pentru anti-Sybil
-- [ ] **2.5** Generare proving key și verification key (trusted setup)
-- [ ] **2.6** Export Verifier.sol din SnarkJS
-
-### Faza 3: Smart Contracts (Cerințe Obligatorii)
-
-- [ ] **3.1** `SoulboundToken.sol` - ERC721 non-transferabil
-  - mappings pentru owners
-  - address pentru verificări
-  - events pentru mint/verificări
-  - modifiers pentru access control
-  - funcții: external, pure, view
-- [ ] **3.2** `IdentityRegistry.sol` - Merkle tree management
-  - Stocare roots pentru fiecare predicat
-  - Events pentru actualizări root
-  - Transfer ETH pentru admin withdraw
-- [ ] **3.3** `AcademicCredentials.sol` - Contract principal
-  - Interacțiune cu Verifier și SBT
-  - Verificare nullifier duplicat
-  - Emitere SBT după verificare proof
-- [ ] **3.4** Deploy pe Hardhat Network local
-- [ ] **3.5** Deploy pe Sepolia Testnet
-
-### Faza 4: Smart Contracts (Cerințe Opționale pentru Bonus)
-
-- [ ] **4.1** Utilizare librării OpenZeppelin
-- [ ] **4.2** Implementare teste cu Hardhat/Chai
-- [ ] **4.3** Pattern-uri OOP:
-  - Interfețe (IVerifier, ISoulboundToken)
-  - Moștenire (ERC721)
-  - Withdrawal Pattern pentru ETH
-- [ ] **4.4** Standard ERC-5192 (Soulbound Tokens)
-
-### Faza 5: Frontend Web3 (Cerințe Obligatorii)
-
-- [ ] **5.1** Setup wagmi + RainbowKit pentru wallet connection
-- [ ] **5.2** Afișare informații cont (adresă, balance)
-- [ ] **5.3** Componente pentru generare ZK proof client-side
-- [ ] **5.4** Tranzacții de mint SBT cu proof
-
-### Faza 6: Frontend (Cerințe Opționale pentru Bonus)
-
-- [ ] **6.1** Tratare events cu Observer Pattern
-- [ ] **6.2** Estimare gas cost înainte de tranzacție
-- [ ] **6.3** Control stare tranzacții (pending, confirmed, failed)
-- [ ] **6.4** Afișare SBT-uri deținute
-
-### Faza 7: Integrare & Testare
-
-- [ ] **7.1** Teste end-to-end
-- [ ] **7.2** Documentație utilizare
-- [ ] **7.3** Demo flow complet
-
----
-
-## Cerințe Acoperite
-
-### Partea 1: Smart Contracts
-
-#### Obligatorii (3 puncte) ✓
-| Cerință | Implementare |
-|---------|--------------|
-| Tipuri date Solidity (mappings, address) | `SoulboundToken.sol`, `IdentityRegistry.sol` |
-| Înregistrare events | Events pentru mint, verificări, actualizări |
-| Utilizare modifiers | `onlyAdmin`, `onlyVerified`, `notMinted` |
-| Toate tipurile de funcții | external, pure, view, payable |
-| Transfer ETH | Withdrawal pattern în `IdentityRegistry` |
-| Interacțiune smart contracts | `AcademicCredentials` ↔ `Verifier` ↔ `SBT` |
-| Deploy rețea test | Hardhat local + Sepolia |
-
-#### Opționale (2 puncte) ✓
-| Cerință | Implementare |
-|---------|--------------|
-| Utilizare librării | OpenZeppelin (ERC721, AccessControl) |
-| Teste | Hardhat + Chai |
-| OOP avansat | Interfețe, moștenire, Withdrawal Pattern |
-| Standard ERC | ERC-721 + ERC-5192 (Soulbound) |
-
-### Partea 2: Aplicație Web3
-
-#### Obligatorii (1.5 puncte) ✓
-| Cerință | Implementare |
-|---------|--------------|
-| Librărie web3 + Provider | ethers.js/wagmi + MetaMask |
-| Informații conturi | Adresă, balance |
-| Inițiere tranzacții | Mint SBT cu proof ZK |
-
-#### Opționale (2.5 puncte) ✓
-| Cerință | Implementare |
-|---------|--------------|
-| Tratare events | Observer Pattern cu wagmi hooks |
-| Analiză gas cost | Estimare înainte de tranzacție |
-| Control stare tranzacții | Tratare excepții, pending states |
-
-### Bonus Complexitate (până la 3 puncte) ✓
-- Zero-Knowledge Proofs cu Circom/SnarkJS
-- Merkle Trees pentru membership proofs
-- Poseidon hash (ZK-friendly)
-- Anti-Sybil cu nullifiers
-- Soulbound Tokens (ERC-5192)
-
----
-
-## Comenzi Setup Inițial
-
-```bash
-# 1. Creare și inițializare proiect
-mkdir -p blockchain && cd blockchain
-npm init -y
-
-# 2. Instalare Hardhat și dependențe Solidity
-npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox typescript ts-node
-npm install @openzeppelin/contracts
-
-# 3. Instalare Circom și SnarkJS
-npm install --save-dev circom snarkjs circomlib
-
-# 4. Inițializare Hardhat
-npx hardhat init
-# Selectează: "Create a TypeScript project"
-
-# 5. Creare aplicație Next.js
-npx create-next-app@latest frontend --typescript --tailwind --app --src-dir
-
-# 6. Instalare dependențe Web3 în frontend
-cd frontend
-npm install wagmi viem @rainbow-me/rainbowkit @tanstack/react-query
-npm install snarkjs
-cd ..
+### AcademicCredentials.sol ✅
+```
+✓ Interactiune cu IVerifier (verifyProof) - pentru ZK
+✓ Interactiune cu ISoulboundToken (mint)
+✓ Interactiune cu IIdentityRegistry (getMerkleRoot, verifyMerkleProof)
+✓ uint256 issuanceFee - taxa de eliberare (ca la secretariat)
+✓ function claimCredential() external payable - claim cu ZK proof
+✓ function claimCredentialWithMerkleProof() external payable - claim cu Merkle proof on-chain
+✓ function setVerifier(address) external - admin seteaza verifier-ul
+✓ function toggleZKVerification(bool) external - activeaza/dezactiveaza ZK
+✓ function setIssuanceFee(uint256) external - modifica taxa
+✓ function withdraw() external - retragere fonduri
+✓ receive() external payable - primeste ETH direct
+✓ Events: CredentialClaimed, VerifierUpdated, ZKVerificationToggled, etc.
 ```
 
 ---
 
-## Configurație Hardhat (hardhat.config.ts)
+## Circuit ZK cu Merkle Tree
 
-```typescript
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import * as dotenv from "dotenv";
+Circuitul verifica ca un student face parte dintr-un Merkle tree (set de studenti eligibili) fara a dezvalui care student este:
 
-dotenv.config();
+**Ce face circuitul:**
+1. Verifica ca utilizatorul cunoaste `secret` (private)
+2. Calculeaza `commitment = Poseidon(secret)` (leaf in Merkle tree)
+3. Verifica ca acest commitment face parte din Merkle tree (folosind merkleProof)
+4. Genereaza `nullifier = Poseidon(secret, predicateId)` pentru anti-Sybil
 
-const config: HardhatUserConfig = {
-  solidity: {
-    version: "0.8.20",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
-      }
-    }
-  },
-  networks: {
-    hardhat: {},
-    sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || "",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-    }
-  }
-};
-
-export default config;
-```
-
----
-
-## Flow Aplicație
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              FLOW UTILIZATOR                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-1. ÎNREGISTRARE (Admin)
-   ┌─────────┐     ┌──────────────┐     ┌─────────────────┐
-   │ Admin   │────▶│ Generează    │────▶│ Adaugă în       │
-   │         │     │ commitment   │     │ Merkle Trees    │
-   └─────────┘     └──────────────┘     └─────────────────┘
-                   commitment = Poseidon(secret, attributes)
-
-2. GENERARE PROOF (Student)
-   ┌─────────┐     ┌──────────────┐     ┌─────────────────┐
-   │ Student │────▶│ Selectează   │────▶│ Generează proof │
-   │         │     │ predicat     │     │ în browser      │
-   └─────────┘     └──────────────┘     └─────────────────┘
-                   "Sunt student FMI"   SNARK proof + nullifier
-
-3. VERIFICARE & MINT SBT
-   ┌─────────┐     ┌──────────────┐     ┌─────────────────┐
-   │ Student │────▶│ Trimite TX   │────▶│ Contract        │
-   │         │     │ cu proof     │     │ verifică & mint │
-   └─────────┘     └──────────────┘     └─────────────────┘
-                                        - Verifică SNARK valid
-                                        - Verifică nullifier unic
-                                        - Mint SBT non-transferabil
-```
-
----
-
-## Exemple Cod
-
-### Circuit Circom - Membership Proof
+**Inputs/Outputs:**
+- **Private:** secret, merkleProof[], proofPositions[]
+- **Public:** merkleRoot, predicateId
+- **Output:** nullifier (pentru a preveni dubla revendicare)
 
 ```circom
 pragma circom 2.1.6;
 
-include "circomlib/circuits/poseidon.circom";
-include "circomlib/circuits/mux1.circom";
+include "node_modules/circomlib/circuits/poseidon.circom";
 
-template MerkleTreeInclusionProof(levels) {
-    signal input leaf;
+template MerkleTreeVerifier(levels) {
+    // Private inputs
+    signal input secret;
     signal input pathElements[levels];
     signal input pathIndices[levels];
-    signal output root;
 
+    // Public inputs
+    signal input merkleRoot;
+    signal input predicateId;
+
+    // Public output
+    signal output nullifier;
+    signal output computedRoot;
+
+    // Calculeaza commitment (leaf)
+    component leafHasher = Poseidon(1);
+    leafHasher.inputs[0] <== secret;
+    signal leaf <== leafHasher.out;
+
+    // Verifica Merkle proof
     component hashers[levels];
-    component mux[levels];
-
-    signal levelHashes[levels + 1];
-    levelHashes[0] <== leaf;
+    signal currentHash[levels + 1];
+    currentHash[0] <== leaf;
 
     for (var i = 0; i < levels; i++) {
         hashers[i] = Poseidon(2);
-        mux[i] = MultiMux1(2);
-
-        mux[i].c[0][0] <== levelHashes[i];
-        mux[i].c[0][1] <== pathElements[i];
-        mux[i].c[1][0] <== pathElements[i];
-        mux[i].c[1][1] <== levelHashes[i];
-        mux[i].s <== pathIndices[i];
-
-        hashers[i].inputs[0] <== mux[i].out[0];
-        hashers[i].inputs[1] <== mux[i].out[1];
-
-        levelHashes[i + 1] <== hashers[i].out;
+        // Daca pathIndices[i] == 0, leaf e pe stanga
+        // Daca pathIndices[i] == 1, leaf e pe dreapta
+        hashers[i].inputs[0] <== currentHash[i] + pathIndices[i] * (pathElements[i] - currentHash[i]);
+        hashers[i].inputs[1] <== pathElements[i] + pathIndices[i] * (currentHash[i] - pathElements[i]);
+        currentHash[i + 1] <== hashers[i].out;
     }
 
-    root <== levelHashes[levels];
+    computedRoot <== currentHash[levels];
+    computedRoot === merkleRoot;
+
+    // Calculeaza nullifier (cu predicateId pt unicitate per predicat)
+    component nullHasher = Poseidon(2);
+    nullHasher.inputs[0] <== secret;
+    nullHasher.inputs[1] <== predicateId;
+    nullifier <== nullHasher.out;
 }
+
+component main {public [merkleRoot, predicateId]} = MerkleTreeVerifier(10);
 ```
 
-### Smart Contract - SoulboundToken.sol
+**Nota:** Contractul `AcademicCredentials.sol` are doua metode de claim:
+1. `claimCredential()` - foloseste ZK proof (circuit de mai sus) - pentru productie
+2. `claimCredentialWithMerkleProof()` - verificare on-chain - pentru testare
 
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+---
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+## Comenzi Utile
 
-contract SoulboundToken is ERC721, AccessControl {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+```powershell
+# === ZIUA 1 - Smart Contracts ===
+# Compilare contracte
+npx hardhat compile
 
-    // Mappings
-    mapping(uint256 => uint256) public tokenPredicates;
-    mapping(bytes32 => bool) public usedNullifiers;
+# Rulare teste
+npx hardhat test
 
-    // Events
-    event CredentialMinted(address indexed to, uint256 tokenId, uint256 predicateId);
-    event NullifierUsed(bytes32 indexed nullifier);
+# Deploy local (in 2 terminale separate)
+npx hardhat node                                          # Terminal 1
+npx hardhat run scripts/deploy.ts --network localhost     # Terminal 2
 
-    // Modifiers
-    modifier nullifierNotUsed(bytes32 nullifier) {
-        require(!usedNullifiers[nullifier], "Nullifier already used");
-        _;
-    }
+# === ZIUA 2 - Circuit ZK (va fi implementat) ===
+# Compilare circuit Circom
+circom circuits/merkle_membership.circom --r1cs --wasm --sym -o build/circuits
 
-    constructor() ERC721("Academic Credential", "ACRED") {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
-    }
+# Generare zkey
+npx snarkjs groth16 setup build/circuits/merkle_membership.r1cs ptau/powersOfTau28_hez_final_14.ptau build/circuits/merkle_membership_0000.zkey
 
-    // External function
-    function mint(
-        address to,
-        uint256 tokenId,
-        uint256 predicateId,
-        bytes32 nullifier
-    ) external onlyRole(MINTER_ROLE) nullifierNotUsed(nullifier) {
-        usedNullifiers[nullifier] = true;
-        tokenPredicates[tokenId] = predicateId;
-        _safeMint(to, tokenId);
+# Export Verifier.sol
+npx snarkjs zkey export solidityverifier build/circuits/merkle_membership_0000.zkey contracts/Verifier.sol
 
-        emit CredentialMinted(to, tokenId, predicateId);
-        emit NullifierUsed(nullifier);
-    }
+# === ZIUA 3 - Frontend ===
+cd frontend && npm run dev
 
-    // View function
-    function getTokenPredicate(uint256 tokenId) external view returns (uint256) {
-        return tokenPredicates[tokenId];
-    }
-
-    // Pure function
-    function computeTokenId(address owner, uint256 predicateId) external pure returns (uint256) {
-        return uint256(keccak256(abi.encodePacked(owner, predicateId)));
-    }
-
-    // Override transfer to make soulbound
-    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
-        address from = _ownerOf(tokenId);
-        require(from == address(0), "Token is soulbound");
-        return super._update(to, tokenId, auth);
-    }
-
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
-        return super.supportsInterface(interfaceId);
-    }
-}
+# === ZIUA 4 - Deploy Sepolia ===
+npx hardhat run scripts/deploy.ts --network sepolia
 ```
 
 ---
 
-## Resurse Utile
+## Punctaj Estimat
 
-- [Circom Documentation](https://docs.circom.io/)
-- [SnarkJS Tutorial](https://github.com/iden3/snarkjs)
-- [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts/)
-- [Hardhat Documentation](https://hardhat.org/docs)
-- [wagmi Documentation](https://wagmi.sh/)
-- [Tornado Cash (similar pattern)](https://github.com/tornadocash/tornado-core)
-
----
-
-## Timeline Sugerată
-
-| Fază | Activități |
-|------|------------|
-| **Săptămâna 1** | Setup mediu, învățare Circom basics |
-| **Săptămâna 2** | Implementare circuite ZK |
-| **Săptămâna 3** | Smart contracts obligatorii + teste |
-| **Săptămâna 4** | Frontend + integrare |
-| **Săptămâna 5** | Features opționale + polish |
-| **Săptămâna 6** | Testare finală + documentație |
+| Categorie | Puncte | Status |
+|-----------|--------|--------|
+| **Smart Contracts Obligatorii** | 3.0 | ✅ Complet |
+| **Smart Contracts Optionale** | 2.0 | ✅ Complet |
+| **Frontend Obligatorii** | 1.5 | In progres |
+| **Frontend Optionale** | 2.5 | In progres |
+| **Bonus Complexitate (ZKP)** | 1-3 | In progres |
+| **TOTAL POTENTIAL** | **10-12** | |
 
 ---
 
-## Notă Finală
+## Resurse
 
-Acest proiect acoperă **toate cerințele obligatorii** și majoritatea **cerințelor opționale** pentru ambele părți, având potențial pentru **punctaj maxim + bonus** datorită complexității ZKP.
+- [Circom Docs](https://docs.circom.io/)
+- [SnarkJS](https://github.com/iden3/snarkjs)
+- [OpenZeppelin](https://docs.openzeppelin.com/contracts/)
+- [Hardhat](https://hardhat.org/docs)
+- [wagmi](https://wagmi.sh/)
+- [RainbowKit](https://www.rainbowkit.com/)
