@@ -19,7 +19,7 @@
 | Creare `SoulboundToken.sol` cu toate cerintele | | [x] |
 | Creare `IdentityRegistry.sol` pentru Merkle roots | | [x] |
 | Creare `AcademicCredentials.sol` - contract principal | | [x] |
-| Teste Hardhat pentru contracte (10 teste) | | [x] |
+| Teste Hardhat pentru contracte (16 teste total) | | [x] |
 | Deploy local + verificare | | [x] |
 
 **Cerinte acoperite Ziua 1:**
@@ -33,14 +33,14 @@
 
 ---
 
-### ZIUA 2 (27 Ian) - Circuit ZK + Verifier
+### ZIUA 2 (27 Ian) - Circuit ZK + Verifier ✅ COMPLETAT
 
 | Task | Responsabil | Status |
 |------|-------------|--------|
-| Creare circuit `merkle_membership.circom` cu Merkle tree | | [ ] |
-| Compilare circuit + generare Verifier.sol | | [ ] |
-| Integrare Verifier in AcademicCredentials | | [ ] |
-| Activare zkVerificationEnabled + teste ZK | | [ ] |
+| Creare circuit `merkle_membership.circom` cu Merkle tree | | [x] |
+| Compilare circuit + generare Verifier.sol | | [x] |
+| Integrare Verifier in AcademicCredentials | | [x] |
+| Activare zkVerificationEnabled + teste ZK (6 teste) | | [x] |
 
 **Cerinte acoperite Ziua 2:**
 - [x] Zero-Knowledge Proofs (bonus complexitate)
@@ -54,11 +54,26 @@
 
 | Task | Responsabil | Status |
 |------|-------------|--------|
-| Setup wagmi + RainbowKit | | [ ] |
+| Setup wagmi + RainbowKit + Next.js | | [ ] |
 | Pagina Connect Wallet + afisare info cont | | [ ] |
-| Pagina Mint Credential (form + tranzactie) | | [ ] |
+| **Pagina Admin** - generare Merkle tree + publish root | | [ ] |
+| **Pagina Student** - claim credential cu ZK proof | | [ ] |
 | Pagina View Credentials (SBT-uri detinute) | | [ ] |
 | Tratare stari tranzactii (pending, success, error) | | [ ] |
+
+**Pagina Admin (nou):**
+- Input lista studenti (nume/email pentru demo)
+- Genereaza secret random pentru fiecare student
+- Calculeaza Poseidon commitments
+- Construieste Merkle tree
+- Publica root pe blockchain (IdentityRegistry)
+- Afiseaza/exporta secretele pentru studenti
+
+**Pagina Student:**
+- Input secret (primit de la admin)
+- Genereaza ZK proof in browser (snarkjs)
+- Trimite proof la contract
+- Primeste SBT
 
 **Cerinte acoperite Ziua 3:**
 - [x] Librarie web3 + Provider
@@ -125,21 +140,31 @@
 ```
 blockchain/
 ├── circuits/
-│   └── merkle_membership.circom  # Circuit ZK cu Merkle tree
+│   └── merkle_membership.circom  # Circuit ZK cu Merkle tree ✅
+├── build/circuits/               # Fisiere compilate circuit
+│   ├── merkle_membership.r1cs
+│   ├── merkle_membership_js/     # WASM + witness generator
+│   └── merkle_membership_0000.zkey
 ├── contracts/
 │   ├── SoulboundToken.sol        # ERC721 non-transferabil (Soulbound)
 │   ├── IdentityRegistry.sol      # Merkle roots + verificare on-chain
 │   ├── AcademicCredentials.sol   # Contract principal + issuanceFee
-│   └── Verifier.sol              # Generat din circuit (Ziua 2)
+│   └── Verifier.sol              # Groth16Verifier generat din circuit ✅
 ├── frontend/
 │   └── src/
 │       ├── app/
-│       │   ├── page.tsx          # Home + Connect
-│       │   ├── mint/page.tsx     # Mint credential
-│       │   └── view/page.tsx     # View SBTs
-│       └── components/
+│       │   ├── page.tsx          # Home + Connect Wallet
+│       │   ├── admin/page.tsx    # Admin: generare Merkle tree + publish
+│       │   ├── claim/page.tsx    # Student: claim cu ZK proof
+│       │   └── view/page.tsx     # View SBTs detinute
+│       ├── components/
+│       └── lib/
+│           ├── merkle.ts         # Logica Merkle tree (Poseidon)
+│           └── zkproof.ts        # Generare ZK proof (snarkjs)
 ├── test/
-│   └── AcademicSystem.test.ts    # 10 teste Hardhat
+│   └── contracts/
+│       ├── AcademicSystem.test.ts  # 10 teste contracte
+│       └── ZKProof.test.ts         # 6 teste ZK proofs
 ├── scripts/
 │   └── deploy.ts                 # Script deployment
 └── ptau/                         # Powers of Tau (Ziua 2)
@@ -204,14 +229,18 @@ Circuitul verifica ca un student face parte dintr-un Merkle tree (set de student
 4. Genereaza `nullifier = Poseidon(secret, predicateId)` pentru anti-Sybil
 
 **Inputs/Outputs:**
-- **Private:** secret, merkleProof[], proofPositions[]
+- **Private:** secret, pathElements[12], pathIndices[12]
 - **Public:** merkleRoot, predicateId
 - **Output:** nullifier (pentru a preveni dubla revendicare)
+
+**Statistici circuit (12 nivele):**
+- 3399 non-linear constraints
+- 2 public inputs, 25 private inputs, 1 public output
 
 ```circom
 pragma circom 2.1.6;
 
-include "node_modules/circomlib/circuits/poseidon.circom";
+include "../node_modules/circomlib/circuits/poseidon.circom";
 
 template MerkleTreeVerifier(levels) {
     // Private inputs
@@ -225,7 +254,6 @@ template MerkleTreeVerifier(levels) {
 
     // Public output
     signal output nullifier;
-    signal output computedRoot;
 
     // Calculeaza commitment (leaf)
     component leafHasher = Poseidon(1);
@@ -234,19 +262,23 @@ template MerkleTreeVerifier(levels) {
 
     // Verifica Merkle proof
     component hashers[levels];
-    signal currentHash[levels + 1];
-    currentHash[0] <== leaf;
+    signal hashes[levels + 1];
+    signal leftInput[levels];
+    signal rightInput[levels];
+    hashes[0] <== leaf;
 
     for (var i = 0; i < levels; i++) {
         hashers[i] = Poseidon(2);
         // Daca pathIndices[i] == 0, leaf e pe stanga
         // Daca pathIndices[i] == 1, leaf e pe dreapta
-        hashers[i].inputs[0] <== currentHash[i] + pathIndices[i] * (pathElements[i] - currentHash[i]);
-        hashers[i].inputs[1] <== pathElements[i] + pathIndices[i] * (currentHash[i] - pathElements[i]);
-        currentHash[i + 1] <== hashers[i].out;
+        leftInput[i] <== hashes[i] + pathIndices[i] * (pathElements[i] - hashes[i]);
+        rightInput[i] <== pathElements[i] + pathIndices[i] * (hashes[i] - pathElements[i]);
+        hashers[i].inputs[0] <== leftInput[i];
+        hashers[i].inputs[1] <== rightInput[i];
+        hashes[i + 1] <== hashers[i].out;
     }
 
-    computedRoot <== currentHash[levels];
+    signal computedRoot <== hashes[levels];
     computedRoot === merkleRoot;
 
     // Calculeaza nullifier (cu predicateId pt unicitate per predicat)
@@ -256,7 +288,8 @@ template MerkleTreeVerifier(levels) {
     nullifier <== nullHasher.out;
 }
 
-component main {public [merkleRoot, predicateId]} = MerkleTreeVerifier(10);
+// 12 nivele = pana la 4096 studenti per predicat
+component main {public [merkleRoot, predicateId]} = MerkleTreeVerifier(12);
 ```
 
 **Nota:** Contractul `AcademicCredentials.sol` are doua metode de claim:
@@ -306,7 +339,7 @@ npx hardhat run scripts/deploy.ts --network sepolia
 | **Smart Contracts Optionale** | 2.0 | ✅ Complet |
 | **Frontend Obligatorii** | 1.5 | In progres |
 | **Frontend Optionale** | 2.5 | In progres |
-| **Bonus Complexitate (ZKP)** | 1-3 | In progres |
+| **Bonus Complexitate (ZKP)** | 1-3 | ✅ Complet |
 | **TOTAL POTENTIAL** | **10-12** | |
 
 ---

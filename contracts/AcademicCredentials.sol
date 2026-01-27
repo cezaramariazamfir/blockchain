@@ -17,13 +17,13 @@ interface IIdentityRegistry {
     ) external view returns (bool);
 }
 
-// nu il avem inca - va fi implemntat in circuit
+// generat din circuit - Groth16Verifier
 interface IVerifier {
     function verifyProof(
         uint256[2] calldata _pA,
         uint256[2][2] calldata _pB,
         uint256[2] calldata _pC,
-        uint256[2] calldata _pubSignals  // [merkleRoot, nullifier]
+        uint256[3] calldata _pubSignals  // [nullifier, merkleRoot, predicateId]
     ) external view returns (bool);
 }
 
@@ -75,18 +75,23 @@ contract AcademicCredentials {
         issuanceFee = _issuanceFee;
     }
 
-    // verificare cu zk 
+    // verificare cu zk
+    // _pubSignals ordine: [nullifier, merkleRoot, predicateId]
     function claimCredential(
         uint256 predicateId,
-        bytes32 nullifier,
         uint256[2] calldata _pA,
         uint256[2][2] calldata _pB,
         uint256[2] calldata _pC,
-        uint256[2] calldata _pubSignals  // [merkleRoot, nullifier]
+        uint256[3] calldata _pubSignals
     ) external payable returns (uint256) {
 
         // verifica taxa de eliberare
         require(msg.value >= issuanceFee, "Insufficient issuance fee");
+
+        // extrage valorile din public signals
+        bytes32 nullifier = bytes32(_pubSignals[0]);
+        bytes32 proofMerkleRoot = bytes32(_pubSignals[1]);
+        uint256 proofPredicateId = _pubSignals[2];
 
         // verifica ca nullifier ul nu a fost folosit
         require(!soulboundToken.isNullifierUsed(nullifier), "Nullifier already used");
@@ -95,15 +100,15 @@ contract AcademicCredentials {
         bytes32 expectedRoot = registry.getMerkleRoot(predicateId);
         require(expectedRoot != bytes32(0), "Predicate not active");
 
+        // verifica ca predicateId din proof == cel din parametru
+        require(proofPredicateId == predicateId, "Predicate ID mismatch");
+
+        // verifica ca root ul din proof e cel stocat on-chain
+        require(proofMerkleRoot == expectedRoot, "Invalid merkle root in proof");
+
         // verificare ZK proof
         require(zkVerificationEnabled, "ZK verification not enabled");
         require(address(verifier) != address(0), "Verifier not set");
-
-        // verifica ca root ul din proof e cel stocat on-chain
-        require(bytes32(_pubSignals[0]) == expectedRoot, "Invalid merkle root in proof");
-
-        // verifica ca nullifier ul din proof e cel trimis
-        require(bytes32(_pubSignals[1]) == nullifier, "Nullifier mismatch");
 
         bool validProof = verifier.verifyProof(_pA, _pB, _pC, _pubSignals);
         require(validProof, "Invalid ZK proof");

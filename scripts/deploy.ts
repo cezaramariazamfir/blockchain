@@ -23,7 +23,15 @@ async function main() {
   console.log("   IdentityRegistry deployed to:", registryAddress);
 
 
-  console.log("\n3. Deploying AcademicCredentials...");
+  console.log("\n3. Deploying Groth16Verifier (ZK)...");
+  const Verifier = await ethers.getContractFactory("Groth16Verifier");
+  const verifier = await Verifier.deploy();
+  await verifier.waitForDeployment();
+  const verifierAddress = await verifier.getAddress();
+  console.log("   Groth16Verifier deployed to:", verifierAddress);
+
+
+  console.log("\n4. Deploying AcademicCredentials...");
   const issuanceFee = 0; // taxa = 0
   const AcademicCredentials = await ethers.getContractFactory("AcademicCredentials");
   const credentials = await AcademicCredentials.deploy(sbtAddress, registryAddress, issuanceFee);
@@ -32,13 +40,20 @@ async function main() {
   console.log("   AcademicCredentials deployed to:", credentialsAddress);
 
 
-  console.log("\n4. Setting AcademicCredentials as minter...");
+  console.log("\n5. Setting AcademicCredentials as minter...");
   await sbt.setMinter(credentialsAddress);
   console.log("   Done!");
 
-  console.log("DEPLOYMENT COMPLETE");
+
+  console.log("\n6. Setting Verifier and enabling ZK...");
+  await credentials.setVerifier(verifierAddress);
+  await credentials.toggleZKVerification(true);
+  console.log("   ZK verification enabled!");
+
+  console.log("\n=== DEPLOYMENT COMPLETE ===");
   console.log("SoulboundToken:      ", sbtAddress);
   console.log("IdentityRegistry:    ", registryAddress);
+  console.log("Groth16Verifier:     ", verifierAddress);
   console.log("AcademicCredentials: ", credentialsAddress);
 }
 
