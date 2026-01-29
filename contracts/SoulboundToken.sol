@@ -5,21 +5,31 @@ pragma solidity ^0.8.20;
 // librarie pt testare si securizare
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract SoulboundToken is ERC721 {
+contract SoulboundToken is ERC721 { 
+    // transforma succesul verificarii ZK intr-o diploma digitala (NFT), care nu poate fi vanduta sau mutata din portofelul studentului
+    // mosteneste standardul universal pt NFTs (ERC271) de la Open Zeppelin. => diplomele sunt vizibile in wallet-uri ca MetaMask
+
+
 
 
     // mecanism anti-sybil: verifica daca am voie sa primesc token ul
     // nullifier = hash(secret+predicateId) 
     // garanteaza ca studentul (secret) poate prima diploma (predicateId) o singura data
-    mapping(bytes32 => bool) public usedNullifiers;
+
+    //dictionar ce are drept cheie nullifier si drept valoare True daca diploma studentului cu secretul "secret", pentru predicateId-ul "predicateId" a mai fost ceruta o data
+    mapping(bytes32 => bool) public usedNullifiers; //folosim mapping si nu lista pentru eficienta dpdv timp de executie
+
+
 
     // asociaza token ul creat cu acelasi predicateId verificat mai sus
     // daca nullifier ul a permis crearea, aici stocam ce reprezinta acel token
-    mapping(uint256 => uint256) public tokenPredicates;
+    mapping(uint256 => uint256) public tokenPredicates; //dcitionar:
+                                                        //cheie = tokenId = nr unic de serie al diplomei
+                                                        // valoare = predicateId = codul categoriei diplomei (ex: 2 pt "Student FMI")
 
 
     uint256 private _tokenIdCounter;     // fiecare token trebuie sa aiba un id unic
-    address public minter;              // singura adresa care are voie sa faca mint
+    address public minter;              // singura adresa care are voie sa faca mint = creare token nou
     address public admin;              // el decide ce adresa e minter
 
 
@@ -69,13 +79,22 @@ contract SoulboundToken is ERC721 {
 
         // from == address(0) inseamna MINT (token nou)
         // from != address(0) inseamna TRANSFER (token exista) BLOCAM
-        require(from == address(0), "Soulbound: transfer not allowed");
+        require(from == address(0), "Soulbound: transfer not allowed"); //daca tokenul nu exista inca => _ownerOf() returneaza address(0)
 
-        return super._update(to, tokenId, auth);
+        // Cazul A (MINT): 
+        // Dacă from este address(0), condiția este adevărată. 
+        // Contractul înțelege că acesta este un token nou care acum se naște. Tranzacția continuă.
+
+        // Cazul B (TRANSFER): 
+        // Dacă studentul încearcă să trimită diploma unui prieten, from va fi adresa studentului (deci NU este address(0)). 
+        // Condiția devine falsă, require oprește totul și afișează eroarea: "Soulbound: transfer not allowed".
+
+        return super._update(to, tokenId, auth); //<=> "Acum că am verificat regula mea de Soulbound, 
+                                                 // mergi mai departe și fă procedura normală de creare a token-ului din librăria de bază".
     }
 
 
-    function mint(
+    function mint( //functie care transforma verificarea reusita intr-o diploma digitala oficiala
         address to,
         uint256 predicateId,
         bytes32 nullifier
@@ -84,10 +103,10 @@ contract SoulboundToken is ERC721 {
         usedNullifiers[nullifier] = true;           // marcheaza nullifier ca folosit
         uint256 tokenId = _tokenIdCounter++;        // id unic pt token
         tokenPredicates[tokenId] = predicateId;     // tipul tokenului
-        _safeMint(to, tokenId);                     // creeaza token ul
+        _safeMint(to, tokenId);                     // creeaza token ul = adauga NFT-ul in portofelul digital al studentului
 
         emit CredentialMinted(to, tokenId, predicateId, nullifier);
-        return tokenId;
+        return tokenId; //returneaza id-ul diplomei
     }
 
 
@@ -114,15 +133,16 @@ contract SoulboundToken is ERC721 {
         return _tokenIdCounter;
     }
 
+    // folosite pentru teste, inainte de a introduce Merkle Trees:
 
-    function computeTokenHash(
-        address owner,
-        uint256 predicateId
-    ) external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(owner, predicateId));
-    }
+    // function computeTokenHash(
+    //     address owner,
+    //     uint256 predicateId
+    // ) external pure returns (bytes32) {
+    //     return keccak256(abi.encodePacked(owner, predicateId));
+    // }
 
-    function computeNullifier(uint256 secret) external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(secret));
-    }
+    // function computeNullifier(uint256 secret) external pure returns (bytes32) {
+    //     return keccak256(abi.encodePacked(secret));
+    // }
 }
