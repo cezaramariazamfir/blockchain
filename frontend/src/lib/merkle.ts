@@ -64,7 +64,14 @@ export class MerkleService {
                                         // cu cea stocata on-chain
 
         // Extragem elementele (pathElements) și direcțiile (pathIndices)
-        const pathElements = proof.map(p => p.data.toString());
+        const pathElements = proof.map(p => {
+            // Dacă e Buffer, convertim la BigInt string
+            if (Buffer.isBuffer(p.data)) {
+                return BigInt('0x' + p.data.toString('hex')).toString();
+            }
+            // Dacă e deja BigInt sau număr
+            return BigInt(p.data).toString();
+        });
         const pathIndices = proof.map(p => (p.position === 'left' ? 0 : 1));
 
 
