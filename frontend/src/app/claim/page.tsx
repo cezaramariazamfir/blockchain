@@ -46,7 +46,8 @@ export default function StudentPage() {
     const handleEnroll = async (predicateId: string) => {
         setLoading(true);
         const merkleService = new MerkleService();
-        const commitment = merkleService.hashFn([secret]); 
+        await merkleService.init();
+        const commitment = merkleService.hashFn([secret]).toString(); // BigInt → string 
 
         const res = await fetch('/api/enroll', {
             method: 'POST',

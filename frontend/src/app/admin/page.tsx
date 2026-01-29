@@ -34,11 +34,33 @@ export default function AdminPage() {
             const root = tree.getHexRoot();
 
             if (window.ethereum) {
+                // Forțăm schimbarea pe Sepolia
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0xaa36a7' }], // Sepolia chainId
+                    });
+                } catch (switchError: any) {
+                    // Dacă Sepolia nu e adăugată, o adăugăm
+                    if (switchError.code === 4902) {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0xaa36a7',
+                                chainName: 'Sepolia',
+                                rpcUrls: ['https://rpc.sepolia.org'],
+                                nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                                blockExplorerUrls: ['https://sepolia.etherscan.io']
+                            }]
+                        });
+                    }
+                }
+
                 const provider = new ethers.BrowserProvider(window.ethereum);
                 const signer = await provider.getSigner();
                 const contract = new ethers.Contract(CONTRACT_ADDRESSES.IdentityRegistry, REGISTRY_ABI, signer);
 
-                const tx = await contract.setMerkleRoot(predicateId, root);
+                const tx = await contract.updateMerkleRoot(predicateId, root);
                 await tx.wait();
 
                 // După publicare, salvăm lista finală de hash-uri pentru ca studenții să poată genera dovezi

@@ -10,6 +10,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://unpkg.com/snarkjs@0.7.0/build/snarkjs.min.js" async></script>
+      </head>
       <body>{children}</body>
     </html>
   )

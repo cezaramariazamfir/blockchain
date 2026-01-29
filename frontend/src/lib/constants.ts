@@ -8,7 +8,7 @@ export const CONTRACT_ADDRESSES = {
 
 // ABI-ul necesar pentru ca AdminPage să poată interacționa cu IdentityRegistry
 export const REGISTRY_ABI = [
-    "function setMerkleRoot(uint256 predicateId, bytes32 merkleRoot) external",
+    "function updateMerkleRoot(uint256 predicateId, bytes32 newRoot) external",
     "function getMerkleRoot(uint256 predicateId) view returns (bytes32)"
 ];
 
