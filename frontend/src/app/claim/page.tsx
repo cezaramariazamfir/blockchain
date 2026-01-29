@@ -69,8 +69,10 @@ export default function StudentPage() {
             const { commitments } = await res.json();
             
             const merkleService = new MerkleService();
+            await merkleService.init(); // Inițializăm Poseidon!
             const tree = await merkleService.createTree(commitments);
-            const myIndex = commitments.indexOf(merkleService.hashFn([secret]));
+            const myCommitment = merkleService.hashFn([secret]).toString(); // BigInt → string
+            const myIndex = commitments.indexOf(myCommitment);
 
             if (myIndex === -1) throw new Error("Nu ești înscris în această listă!");
 
