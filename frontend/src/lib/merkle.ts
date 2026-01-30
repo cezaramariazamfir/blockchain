@@ -16,25 +16,65 @@ export class MerkleService {
         }
     }
 
-    // Funcție de hash compatibilă cu Poseidon(2) din circuit
+    // Funcție internă care calculează hash-ul și returnează BigInt
+    private hashToBigInt(values: any[]): bigint {
+        const processedValues = values.map(v => {
+            // Dacă e Buffer
+            if (Buffer.isBuffer(v)) {
+                return BigInt('0x' + v.toString('hex'));
+            }
+            // Dacă e string, convertim la BigInt
+            if (typeof v === 'string') {
+                return BigInt(v);
+            }
+            // Dacă e deja BigInt sau număr, îl lăsăm așa
+            if (typeof v === 'bigint' || typeof v === 'number') {
+                return v;
+            }
+            // Altfel, încercăm să-l convertim
+            return BigInt(v.toString());
+        });
+        const res = this.poseidon(processedValues);
+        return this.poseidon.F.toObject(res);
+    }
+
+    // Funcție de hash pentru MerkleTree - returnează Buffer
     hashFn(values: any[]) {
-        const res = this.poseidon(values);
-        return this.poseidon.F.toObject(res); 
+        const bigIntResult = this.hashToBigInt(values);
+        // IMPORTANT: MerkleTree se așteaptă la un Buffer, nu la BigInt
+        // Convertim BigInt la Buffer hexazecimal
+        const hexString = bigIntResult.toString(16).padStart(64, '0'); // 32 bytes = 64 hex chars
+        return Buffer.from(hexString, 'hex');
         // circuitele ZK lucreaza cu numere dintr-un set limitat (mod n, unde n este f. mare si prim)
         //poseidon.F = obiect ce contine metodele necesare pentru a face operatii ( + / - / conversii de tip toObject) in finite field
     }
 
-    async createTree(secrets: string[]) { //transforma o lista de secrete in merkleTree, pe care il returneaza
+    // Funcție publică pentru calcularea commitment-ului unui secret - returnează string
+    computeCommitment(secret: string): string {
+        return this.hashToBigInt([secret]).toString();
+    }
+
+    async createTree(commitments: string[]) { //transforma o lista de commitments in merkleTree, pe care il returneaza
         await this.init(); //ma asigur ca motorul Poseidon e gata de utilizare
 
-        // 1. Generăm frunzele (Leaves) folosind Poseidon(secret), pentru fiecare secret din lista
-        const leaves = secrets.map(s => this.hashFn([s]));
+        // 1. Convertim commitments (deja hash-uite) la Buffer
+        // NU mai hash-uim din nou, pentru că sunt deja Poseidon(secret)
+        // MerkleTree se așteaptă la Buffer-e când hashLeaves: false
+        const leaves = commitments.map(c => {
+            const hexString = BigInt(c).toString(16).padStart(64, '0'); // 32 bytes
+            return Buffer.from(hexString, 'hex');
+        });
 
         // 2. Construim arborele
         // Folosim sortPairs: false pentru că ordinea este dictată de pathIndices în circuit
-        const tree = new MerkleTree(leaves, (vals: any[]) => this.hashFn(vals), { 
-                                            //(vals: any[]) => this.hashFn(vals) <=> de fiecare data cand vrei sa combini 2 noduri 
-                                            // pentru a urca un nivel, foloseste functia mea de hash Poseidon = hashFn
+        const tree = new MerkleTree(leaves, (concatenated: Buffer) => {
+            // MerkleTree pasează nodurile ca un singur Buffer concatenat (left+right)
+            // Trebuie să-l împărțim în două bucăți de câte 32 bytes
+            const left = concatenated.slice(0, 32);
+            const right = concatenated.slice(32, 64);
+            return this.hashFn([left, right]);
+        }, {
+                                            // MerkleTree apelează hash function cu UN Buffer ce conține left+right concatenate
             hashLeaves: false, // nu mai hash-uiesc o data frunzele, pt ca frunzele = commitments = Poseidon(secret) //deja hash-uit
             sortPairs: false //În arborii Merkle standard (ex: Bitcoin), perechile de noduri sunt sortate alfabetic înainte de a fi 
                                 // hashuite pentru a simplifica dovezile. 
@@ -53,15 +93,17 @@ export class MerkleService {
         //      Merkle tree-ul de la frunza studentului la radacina si a emite nullifier-ul
         // studentul va folosi root, pathElements si pathIndices bagandu-le in circuit si generand dovada zero-knowledge
 
-
-
+        const allLeaves = tree.getLeaves();
+        console.log("Total leaves in tree:", allLeaves.length);
+        console.log("Leaf at index", leafIndex, ":", '0x' + allLeaves[leafIndex].toString('hex'));
 
 
         const proof = tree.getProof(tree.getLeaves()[leafIndex]); //caut in arbore si extrag: lista de frati necesara pentru a reconstrui radacina
                                                                     // pornind de la studentul aflat la leafIndex
-        const root = tree.getHexRoot(); // extrage radacina Merkle Tree - ului sub forma de string hexazecimal
+        //const root = tree.getHexRoot(); // extrage radacina Merkle Tree - ului sub forma de string hexazecimal
                                         // ea va fi folosita pentru a verifica daca radacina reconstruita de circuit se potriveste
                                         // cu cea stocata on-chain
+        const root = BigInt(tree.getHexRoot()).toString();
 
         // Extragem elementele (pathElements) și direcțiile (pathIndices)
         const pathElements = proof.map(p => {
@@ -72,7 +114,10 @@ export class MerkleService {
             // Dacă e deja BigInt sau număr
             return BigInt(p.data).toString();
         });
-        const pathIndices = proof.map(p => (p.position === 'left' ? 0 : 1));
+        // IMPORTANT: În MerkleTree, position='left' înseamnă că proof element merge pe stânga
+        // În circuit, pathIndices=0 înseamnă că nodul CURENT e pe stânga
+        // Deci: proof position='left' => current node e pe dreapta => pathIndices=1
+        const pathIndices = proof.map(p => (p.position === 'left' ? 1 : 0));
 
 
 
@@ -84,7 +129,7 @@ export class MerkleService {
         // Modul acesta de cosntructie a drumului va coincide cu cel in care adminul creeaza radacina root publicata pe blockchain.
         // Adminul creeaza cu createTree un arbore de inaltime minima care sa includa toti studentii pe frunze,
         // Dar il va inalta cu zero-uri pana atinge 12 niveluri inainte de a publica root-ul pe blockchain.
-        
+
         while (pathElements.length < 12) {
             pathElements.push("0");
             pathIndices.push(0);

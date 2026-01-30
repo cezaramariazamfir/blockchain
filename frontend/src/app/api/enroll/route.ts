@@ -38,6 +38,15 @@ export async function POST(request: Request) {
 
         const db = readDB();
 
+        // Verificăm dacă înscrierea este deschisă
+        const registrationState = db.registrationState?.[predicateId] || 'closed';
+        if (registrationState !== 'open') {
+            return NextResponse.json(
+                { error: 'Înscrierea este închisă pentru această categorie!' },
+                { status: 403 }
+            );
+        }
+
         // Inițializăm array-ul dacă nu există
         if (!db.enrollments[predicateId]) {
             db.enrollments[predicateId] = [];
