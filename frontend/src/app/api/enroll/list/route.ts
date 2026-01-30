@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
-
-function readDB() {
-    const data = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(data);
-}
+import { connectToDatabase } from '@/lib/mongodb';
+import Enrollment from '@/models/Enrollment';
+import FinalizedList from '@/models/FinalizedList';
 
 // GET - Returnează lista de commitments pentru un predicat specific
 // Folosit de student pentru a genera dovada ZK
@@ -23,19 +17,23 @@ export async function GET(request: Request) {
             );
         }
 
-        const db = readDB();
+        await connectToDatabase();
 
         // Verificăm dacă există o listă finalizată (publicată pe blockchain)
-        if (db.finalized[predicateId]) {
+        const finalized = await FinalizedList.findOne({ predicateId });
+
+        if (finalized) {
             return NextResponse.json({
-                commitments: db.finalized[predicateId].commitments,
-                root: db.finalized[predicateId].root,
+                commitments: finalized.commitments,
+                root: finalized.root,
                 finalized: true
             });
         }
 
         // Altfel returnăm lista curentă (nefinalizată)
-        const commitments = db.enrollments[predicateId] || [];
+        const enrollments = await Enrollment.find({ predicateId });
+        const commitments = enrollments.map(e => e.commitment);
+
         return NextResponse.json({
             commitments,
             finalized: false

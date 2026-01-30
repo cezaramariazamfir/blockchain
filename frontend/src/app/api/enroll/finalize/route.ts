@@ -1,17 +1,6 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
-
-function readDB() {
-    const data = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(data);
-}
-
-function writeDB(data: any) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-}
+import { connectToDatabase } from '@/lib/mongodb';
+import FinalizedList from '@/models/FinalizedList';
 
 // POST - Adminul finalizează lista după publicarea Merkle root pe blockchain
 // Salvează snapshot-ul listei pentru ca studenții să poată genera dovezi
@@ -26,19 +15,18 @@ export async function POST(request: Request) {
             );
         }
 
-        const db = readDB();
+        await connectToDatabase();
 
-        // Salvăm lista finalizată cu root-ul publicat
-        db.finalized[predicateId] = {
-            root,
-            commitments,
-            finalizedAt: new Date().toISOString()
-        };
-
-        // Golim lista de înscrieri pentru această categorie (opțional)
-        // db.enrollments[predicateId] = [];
-
-        writeDB(db);
+        // Upsert - creează sau actualizează lista finalizată
+        await FinalizedList.findOneAndUpdate(
+            { predicateId: String(predicateId) },
+            {
+                root,
+                commitments,
+                finalizedAt: new Date()
+            },
+            { upsert: true, new: true }
+        );
 
         console.log(`Lista pentru predicat ${predicateId} a fost finalizată cu root: ${root}`);
 

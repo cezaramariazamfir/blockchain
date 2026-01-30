@@ -1,17 +1,6 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
-
-function readDB() {
-    const data = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(data);
-}
-
-function writeDB(data: any) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-}
+import { connectToDatabase } from '@/lib/mongodb';
+import RegistrationState from '@/models/RegistrationState';
 
 // POST - Adminul deschide/închide înscrierea pentru un predicat
 export async function POST(request: Request) {
@@ -32,17 +21,14 @@ export async function POST(request: Request) {
             );
         }
 
-        const db = readDB();
+        await connectToDatabase();
 
-        // Inițializează registrationState dacă nu există
-        if (!db.registrationState) {
-            db.registrationState = {};
-        }
-
-        // Setează starea
-        db.registrationState[predicateId] = state;
-
-        writeDB(db);
+        // Upsert - creează sau actualizează
+        await RegistrationState.findOneAndUpdate(
+            { predicateId: String(predicateId) },
+            { state },
+            { upsert: true, new: true }
+        );
 
         console.log(`Registration pentru predicatul ${predicateId} este acum: ${state}`);
 
@@ -65,17 +51,23 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const predicateId = searchParams.get('predicateId');
 
-        const db = readDB();
+        await connectToDatabase();
 
         if (predicateId) {
-            const state = db.registrationState?.[predicateId] || 'closed';
+            const regState = await RegistrationState.findOne({ predicateId });
+            const state = regState?.state || 'closed';
             return NextResponse.json({ predicateId, state });
         }
 
         // Returnează toate stările
-        return NextResponse.json({
-            registrationState: db.registrationState || {}
-        });
+        const allStates = await RegistrationState.find({});
+        const registrationState: Record<string, string> = {};
+
+        for (const s of allStates) {
+            registrationState[s.predicateId] = s.state;
+        }
+
+        return NextResponse.json({ registrationState });
 
     } catch (error) {
         console.error('Eroare la citirea stării înscrierii:', error);
