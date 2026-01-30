@@ -135,10 +135,17 @@ export default function AdminPage() {
             return alert("Trebuie să închizi mai întâi înscrierea înainte de a publica root-ul!");
         }
 
-        const commitments = enrollments[predicateId];
-        if (!commitments || commitments.length === 0) return alert("Nu există înscrieri!");
-
         setLoading(true);
+
+        // Citim commitments direct din MongoDB (date proaspete)
+        const enrollRes = await fetch('/api/enroll');
+        const freshEnrollments = await enrollRes.json();
+        const commitments = freshEnrollments[predicateId];
+
+        if (!commitments || commitments.length === 0) {
+            setLoading(false);
+            return alert("Nu există înscrieri!");
+        }
         try {
             const merkleService = new MerkleService();
             
