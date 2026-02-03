@@ -14,7 +14,6 @@ export default function AdminPage() {
     const [enrollments, setEnrollments] = useState<Record<string, string[]>>({}); //listele de inscrieri: {"0": ["hash1", "hash2"], "1": ["hash3"]}
     const [registrationState, setRegistrationState] = useState<Record<string, string>>({}); // Starea înscrierii pentru fiecare predicat
     const [loading, setLoading] = useState(false);
-    const [showAddModal, setShowAddModal] = useState(false);
     const [selectedPredicate, setSelectedPredicate] = useState<string | null>(null);
     const [searchEmail, setSearchEmail] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -76,27 +75,41 @@ export default function AdminPage() {
         }
     };
 
-    // Deschide modal-ul pentru adăugare studenți
+    // Deschide secțiunea pentru adăugare studenți
     const handleOpenAddModal = (predicateId: string) => {
-        setSelectedPredicate(predicateId);
-        setShowAddModal(true);
-        setSearchEmail('');
-        setSearchResults([]);
+        // Dacă deja este deschis pentru acest predicat, închidem
+        if (selectedPredicate === predicateId) {
+            setSelectedPredicate(null);
+            setSearchEmail('');
+            setSearchResults([]);
+        } else {
+            setSelectedPredicate(predicateId);
+            setSearchEmail('');
+            setSearchResults([]);
+            // Facem căutarea inițială pentru a afișa toți studenții disponibili
+            fetchStudentsForPredicate(predicateId, '');
+        }
     };
 
-    // Caută studenți
-    const handleSearchStudents = async () => {
-        if (!selectedPredicate) return;
-
+    // Caută studenți în timp real
+    const fetchStudentsForPredicate = async (predicateId: string, email: string) => {
         try {
-            const res = await fetch(`/api/students/search?predicateId=${selectedPredicate}&email=${searchEmail}`);
+            const res = await fetch(`/api/students/search?predicateId=${predicateId}&email=${email}`);
             const data = await res.json();
             if (data.success) {
                 setSearchResults(data.students);
             }
         } catch (error) {
             console.error('Eroare la căutare:', error);
-            alert('Eroare la căutare studenți');
+        }
+    };
+
+    // Handler pentru schimbarea textului de căutare
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const email = e.target.value;
+        setSearchEmail(email);
+        if (selectedPredicate) {
+            fetchStudentsForPredicate(selectedPredicate, email);
         }
     };
 
@@ -119,7 +132,7 @@ export default function AdminPage() {
             if (data.success) {
                 alert(data.message);
                 // Reîncărcăm lista
-                handleSearchStudents();
+                fetchStudentsForPredicate(selectedPredicate, searchEmail);
             }
         } catch (error) {
             console.error('Eroare:', error);
@@ -578,232 +591,195 @@ export default function AdminPage() {
                                     ⏳ Se procesează...
                                 </div>
                             )}
+
+                            {/* Secțiune adăugare studenți - apare inline */}
+                            {selectedPredicate === id && (
+                                <div style={{
+                                    marginTop: '20px',
+                                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                                    borderRadius: '12px',
+                                    padding: '20px',
+                                    border: '2px solid #3b82f6'
+                                }}>
+                                    <h4 style={{
+                                        margin: '0 0 16px 0',
+                                        fontSize: '16px',
+                                        color: '#1e40af',
+                                        fontWeight: '700'
+                                    }}>
+                                        🔍 Adaugă studenți la această categorie
+                                    </h4>
+
+                                    {/* Input de căutare */}
+                                    <input
+                                        type="text"
+                                        value={searchEmail}
+                                        onChange={handleSearchChange}
+                                        placeholder="Caută după email..."
+                                        style={{
+                                            width: '100%',
+                                            padding: '12px 16px',
+                                            border: '2px solid #3b82f6',
+                                            borderRadius: '8px',
+                                            fontSize: '15px',
+                                            marginBottom: '16px',
+                                            transition: 'all 0.3s ease',
+                                            boxSizing: 'border-box'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.currentTarget.style.borderColor = '#2563eb';
+                                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.currentTarget.style.borderColor = '#3b82f6';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }}
+                                    />
+
+                                    {/* Lista scrollabilă de studenți */}
+                                    <div style={{
+                                        maxHeight: '300px',
+                                        overflowY: 'auto',
+                                        background: 'white',
+                                        borderRadius: '8px',
+                                        border: '1px solid #e5e7eb'
+                                    }}>
+                                        {searchResults.length > 0 ? (
+                                            <div style={{ padding: '8px' }}>
+                                                <div style={{
+                                                    fontSize: '13px',
+                                                    color: '#6b7280',
+                                                    fontWeight: '600',
+                                                    marginBottom: '8px',
+                                                    padding: '0 8px'
+                                                }}>
+                                                    {searchResults.length} student{searchResults.length !== 1 ? 'i' : ''} găsit{searchResults.length !== 1 ? 'i' : ''}
+                                                </div>
+                                                {searchResults.map((student) => (
+                                                    <div
+                                                        key={student._id}
+                                                        style={{
+                                                            padding: '12px',
+                                                            background: '#f9fafb',
+                                                            border: '1px solid #e5e7eb',
+                                                            borderRadius: '6px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            gap: '12px',
+                                                            marginBottom: '6px',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = '#f3f4f6';
+                                                            e.currentTarget.style.borderColor = '#d1d5db';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = '#f9fafb';
+                                                            e.currentTarget.style.borderColor = '#e5e7eb';
+                                                        }}
+                                                    >
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{
+                                                                fontSize: '14px',
+                                                                fontWeight: '600',
+                                                                color: '#2d3748',
+                                                                marginBottom: '2px',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap'
+                                                            }}>
+                                                                {student.nume}
+                                                            </div>
+                                                            <div style={{
+                                                                fontSize: '12px',
+                                                                color: '#718096',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                whiteSpace: 'nowrap'
+                                                            }}>
+                                                                {student.email}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleAddStudent(student._id)}
+                                                            style={{
+                                                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                                                color: 'white',
+                                                                padding: '6px 14px',
+                                                                border: 'none',
+                                                                borderRadius: '6px',
+                                                                fontSize: '13px',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease',
+                                                                boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                                                                whiteSpace: 'nowrap',
+                                                                flexShrink: 0
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.transform = 'scale(1.05)';
+                                                                e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.3)';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.transform = 'scale(1)';
+                                                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.2)';
+                                                            }}
+                                                        >
+                                                            ✅ Adaugă
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div style={{
+                                                padding: '32px 20px',
+                                                textAlign: 'center',
+                                                color: '#9ca3af',
+                                                fontSize: '14px'
+                                            }}>
+                                                {searchEmail
+                                                    ? 'Nu s-au găsit studenți pentru această căutare.'
+                                                    : 'Toți studenții au deja permisiune pentru această categorie.'}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Buton închide */}
+                                    <button
+                                        onClick={() => {
+                                            setSelectedPredicate(null);
+                                            setSearchEmail('');
+                                            setSearchResults([]);
+                                        }}
+                                        style={{
+                                            marginTop: '12px',
+                                            width: '100%',
+                                            background: '#e5e7eb',
+                                            color: '#4b5563',
+                                            padding: '10px',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#d1d5db';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#e5e7eb';
+                                        }}
+                                    >
+                                        ✖️ Închide
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
             </div>
-
-            {/* Modal pentru adăugare student */}
-            {showAddModal && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.5)',
-                        backdropFilter: 'blur(4px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        padding: '20px'
-                    }}
-                    onClick={() => setShowAddModal(false)}
-                >
-                    <div
-                        style={{
-                            background: 'white',
-                            borderRadius: '16px',
-                            padding: '32px',
-                            maxWidth: '600px',
-                            width: '100%',
-                            maxHeight: '80vh',
-                            overflow: 'auto',
-                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div style={{ marginBottom: '24px' }}>
-                            <h2 style={{
-                                margin: '0 0 8px 0',
-                                fontSize: '24px',
-                                color: '#2d3748',
-                                fontWeight: '700'
-                            }}>
-                                Adaugă Student
-                            </h2>
-                            <p style={{ margin: 0, color: '#718096', fontSize: '14px' }}>
-                                Categorie: {selectedPredicate && predicates[selectedPredicate as keyof typeof predicates]}
-                            </p>
-                        </div>
-
-                        {/* Search Section */}
-                        <div style={{ marginBottom: '24px' }}>
-                            <label style={{
-                                display: 'block',
-                                marginBottom: '8px',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                color: '#4a5568'
-                            }}>
-                                Caută după email
-                            </label>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <input
-                                    type="text"
-                                    value={searchEmail}
-                                    onChange={(e) => setSearchEmail(e.target.value)}
-                                    placeholder="email@s.unibuc.ro"
-                                    style={{
-                                        flex: 1,
-                                        padding: '12px 16px',
-                                        border: '2px solid #e2e8f0',
-                                        borderRadius: '8px',
-                                        fontSize: '15px',
-                                        transition: 'border-color 0.3s ease'
-                                    }}
-                                    onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
-                                    onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleSearchStudents();
-                                        }
-                                    }}
-                                />
-                                <button
-                                    onClick={handleSearchStudents}
-                                    style={{
-                                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                        color: 'white',
-                                        padding: '12px 24px',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        fontSize: '15px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease',
-                                        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                                    }}
-                                >
-                                    🔍 Caută
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Results Section */}
-                        {searchResults.length > 0 && (
-                            <div>
-                                <h3 style={{
-                                    margin: '0 0 16px 0',
-                                    fontSize: '16px',
-                                    color: '#4a5568',
-                                    fontWeight: '600'
-                                }}>
-                                    Rezultate ({searchResults.length})
-                                </h3>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {searchResults.map((student) => (
-                                        <div
-                                            key={student._id}
-                                            style={{
-                                                padding: '16px',
-                                                background: '#f9fafb',
-                                                border: '1px solid #e5e7eb',
-                                                borderRadius: '8px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                gap: '12px'
-                                            }}
-                                        >
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{
-                                                    fontSize: '15px',
-                                                    fontWeight: '600',
-                                                    color: '#2d3748',
-                                                    marginBottom: '4px'
-                                                }}>
-                                                    {student.nume}
-                                                </div>
-                                                <div style={{
-                                                    fontSize: '13px',
-                                                    color: '#718096'
-                                                }}>
-                                                    {student.email}
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => handleAddStudent(student._id)}
-                                                style={{
-                                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                                    color: 'white',
-                                                    padding: '8px 16px',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    fontSize: '14px',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.3s ease',
-                                                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
-                                                    whiteSpace: 'nowrap'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    e.currentTarget.style.transform = 'scale(1.05)';
-                                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.currentTarget.style.transform = 'scale(1)';
-                                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.3)';
-                                                }}
-                                            >
-                                                ✅ Adaugă
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Empty State */}
-                        {searchResults.length === 0 && searchEmail && (
-                            <div style={{
-                                padding: '32px',
-                                textAlign: 'center',
-                                color: '#718096',
-                                fontSize: '14px'
-                            }}>
-                                Nu s-au găsit studenți fără permisiune pentru această categorie.
-                            </div>
-                        )}
-
-                        {/* Close Button */}
-                        <div style={{ marginTop: '24px', textAlign: 'right' }}>
-                            <button
-                                onClick={() => setShowAddModal(false)}
-                                style={{
-                                    background: '#e2e8f0',
-                                    color: '#4a5568',
-                                    padding: '12px 24px',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s ease'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = '#cbd5e0';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = '#e2e8f0';
-                                }}
-                            >
-                                Închide
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Add keyframes for pulse animation */}
             <style jsx>{`
