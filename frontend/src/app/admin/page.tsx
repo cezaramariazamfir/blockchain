@@ -13,7 +13,7 @@ import predicates from '@/lib/predicates.json';
 export default function AdminPage() {
     const [enrollments, setEnrollments] = useState<Record<string, string[]>>({}); //listele de inscrieri: {"0": ["hash1", "hash2"], "1": ["hash3"]}
     const [registrationState, setRegistrationState] = useState<Record<string, string>>({}); // Starea înscrierii pentru fiecare predicat
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState<Record<string, boolean>>({}); // Loading specific pentru fiecare predicat
     const [selectedPredicate, setSelectedPredicate] = useState<string | null>(null);
     const [searchEmail, setSearchEmail] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -203,7 +203,7 @@ export default function AdminPage() {
             return alert("Trebuie să închizi mai întâi înscrierea înainte de a publica root-ul!");
         }
 
-        setLoading(true);
+        setLoading(prev => ({ ...prev, [predicateId]: true }));
 
         // Citim commitments direct din MongoDB (date proaspete)
         const enrollRes = await fetch('/api/enroll');
@@ -211,7 +211,7 @@ export default function AdminPage() {
         const commitments = freshEnrollments[predicateId];
 
         if (!commitments || commitments.length === 0) {
-            setLoading(false);
+            setLoading(prev => ({ ...prev, [predicateId]: false }));
             return alert("Nu există înscrieri!");
         }
         try {
@@ -290,7 +290,7 @@ export default function AdminPage() {
             console.error("Eroare Admin:", error);
             alert(error.reason || error.message || "Eroare la publicare.");
         } finally {
-            setLoading(false);
+            setLoading(prev => ({ ...prev, [predicateId]: false }));
         }
     };
 
@@ -329,6 +329,7 @@ export default function AdminPage() {
                 {Object.keys(predicates).map((id) => {
                     const isOpen = registrationState[id] === 'open';
                     const enrollmentCount = enrollments[id]?.length || 0;
+                    const isLoading = loading[id] || false;
 
                     return (
                         <div
@@ -434,33 +435,33 @@ export default function AdminPage() {
                             }}>
                                 <button
                                     onClick={() => handleStartRegistration(id)}
-                                    disabled={loading || isOpen}
+                                    disabled={isLoading || isOpen}
                                     style={{
-                                        background: (loading || isOpen)
+                                        background: (isLoading || isOpen)
                                             ? '#e2e8f0'
                                             : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                        color: (loading || isOpen) ? '#94a3b8' : 'white',
+                                        color: (isLoading || isOpen) ? '#94a3b8' : 'white',
                                         padding: '14px 24px',
                                         border: 'none',
                                         borderRadius: '10px',
                                         fontSize: '15px',
                                         fontWeight: '600',
-                                        cursor: (loading || isOpen) ? 'not-allowed' : 'pointer',
+                                        cursor: (isLoading || isOpen) ? 'not-allowed' : 'pointer',
                                         transition: 'all 0.3s ease',
-                                        boxShadow: (loading || isOpen)
+                                        boxShadow: (isLoading || isOpen)
                                             ? 'none'
                                             : '0 4px 12px rgba(16, 185, 129, 0.3)',
                                         position: 'relative',
                                         overflow: 'hidden'
                                     }}
                                     onMouseEnter={(e) => {
-                                        if (!loading && !isOpen) {
+                                        if (!isLoading && !isOpen) {
                                             e.currentTarget.style.transform = 'translateY(-2px)';
                                             e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
                                         }
                                     }}
                                     onMouseLeave={(e) => {
-                                        if (!loading && !isOpen) {
+                                        if (!isLoading && !isOpen) {
                                             e.currentTarget.style.transform = 'translateY(0)';
                                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
                                         }
@@ -471,31 +472,31 @@ export default function AdminPage() {
 
                                 <button
                                     onClick={() => handleStopRegistration(id)}
-                                    disabled={loading || !isOpen}
+                                    disabled={isLoading || !isOpen}
                                     style={{
-                                        background: (loading || !isOpen)
+                                        background: (isLoading || !isOpen)
                                             ? '#e2e8f0'
                                             : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                                        color: (loading || !isOpen) ? '#94a3b8' : 'white',
+                                        color: (isLoading || !isOpen) ? '#94a3b8' : 'white',
                                         padding: '14px 24px',
                                         border: 'none',
                                         borderRadius: '10px',
                                         fontSize: '15px',
                                         fontWeight: '600',
-                                        cursor: (loading || !isOpen) ? 'not-allowed' : 'pointer',
+                                        cursor: (isLoading || !isOpen) ? 'not-allowed' : 'pointer',
                                         transition: 'all 0.3s ease',
-                                        boxShadow: (loading || !isOpen)
+                                        boxShadow: (isLoading || !isOpen)
                                             ? 'none'
                                             : '0 4px 12px rgba(245, 158, 11, 0.3)'
                                     }}
                                     onMouseEnter={(e) => {
-                                        if (!loading && isOpen) {
+                                        if (!isLoading && isOpen) {
                                             e.currentTarget.style.transform = 'translateY(-2px)';
                                             e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.4)';
                                         }
                                     }}
                                     onMouseLeave={(e) => {
-                                        if (!loading && isOpen) {
+                                        if (!isLoading && isOpen) {
                                             e.currentTarget.style.transform = 'translateY(0)';
                                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
                                         }
@@ -506,32 +507,32 @@ export default function AdminPage() {
 
                                 <button
                                     onClick={() => handlePublishRoot(id)}
-                                    disabled={loading}
+                                    disabled={isLoading}
                                     style={{
-                                        background: loading
+                                        background: isLoading
                                             ? '#e2e8f0'
                                             : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                        color: loading ? '#94a3b8' : 'white',
+                                        color: isLoading ? '#94a3b8' : 'white',
                                         padding: '14px 24px',
                                         border: 'none',
                                         borderRadius: '10px',
                                         fontSize: '15px',
                                         fontWeight: '600',
-                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                        cursor: isLoading ? 'not-allowed' : 'pointer',
                                         transition: 'all 0.3s ease',
-                                        boxShadow: loading
+                                        boxShadow: isLoading
                                             ? 'none'
                                             : '0 4px 12px rgba(102, 126, 234, 0.4)',
                                         gridColumn: 'span 1'
                                     }}
                                     onMouseEnter={(e) => {
-                                        if (!loading) {
+                                        if (!isLoading) {
                                             e.currentTarget.style.transform = 'translateY(-2px)';
                                             e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.5)';
                                         }
                                     }}
                                     onMouseLeave={(e) => {
-                                        if (!loading) {
+                                        if (!isLoading) {
                                             e.currentTarget.style.transform = 'translateY(0)';
                                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
                                         }
@@ -542,31 +543,31 @@ export default function AdminPage() {
 
                                 <button
                                     onClick={() => handleOpenAddModal(id)}
-                                    disabled={loading}
+                                    disabled={isLoading}
                                     style={{
-                                        background: loading
+                                        background: isLoading
                                             ? '#e2e8f0'
                                             : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                                        color: loading ? '#94a3b8' : 'white',
+                                        color: isLoading ? '#94a3b8' : 'white',
                                         padding: '14px 24px',
                                         border: 'none',
                                         borderRadius: '10px',
                                         fontSize: '15px',
                                         fontWeight: '600',
-                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                        cursor: isLoading ? 'not-allowed' : 'pointer',
                                         transition: 'all 0.3s ease',
-                                        boxShadow: loading
+                                        boxShadow: isLoading
                                             ? 'none'
                                             : '0 4px 12px rgba(59, 130, 246, 0.3)'
                                     }}
                                     onMouseEnter={(e) => {
-                                        if (!loading) {
+                                        if (!isLoading) {
                                             e.currentTarget.style.transform = 'translateY(-2px)';
                                             e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
                                         }
                                     }}
                                     onMouseLeave={(e) => {
-                                        if (!loading) {
+                                        if (!isLoading) {
                                             e.currentTarget.style.transform = 'translateY(0)';
                                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
                                         }
@@ -577,7 +578,7 @@ export default function AdminPage() {
                             </div>
 
                             {/* Loading Indicator */}
-                            {loading && (
+                            {isLoading && (
                                 <div style={{
                                     marginTop: '16px',
                                     padding: '12px',
