@@ -9,6 +9,8 @@ import predicates from '@/lib/predicates.json';
 
 export default function StudentPage() {
     const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [isSignupMode, setIsSignupMode] = useState(false);
     const [authData, setAuthData] = useState<any>(null);
     const [secret, setSecret] = useState("");
     const [loading, setLoading] = useState(false);
@@ -37,19 +39,80 @@ export default function StudentPage() {
     }, [email]);
 
     const handleLogin = async () => {
-        const res = await fetch(`/api/auth?email=${email}`);
-        const data = await res.json();
-
-        if (data.error) return alert("Email negăsit în baza de date!");
-
-        setAuthData(data);
-
-        let storedSecret = localStorage.getItem(`secret_${email}`);
-        if (!storedSecret) {
-            storedSecret = ethers.toBigInt(ethers.randomBytes(31)).toString();
-            localStorage.setItem(`secret_${email}`, storedSecret);
+        if (!email || !password) {
+            return alert("Completează email-ul și parola!");
         }
-        setSecret(storedSecret);
+
+        setLoading(true);
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+                alert(data.error);
+                setLoading(false);
+                return;
+            }
+
+            alert(`Bun venit, ${data.student.nume}!`);
+            setAuthData(data.student);
+
+            let storedSecret = localStorage.getItem(`secret_${email}`);
+            if (!storedSecret) {
+                storedSecret = ethers.toBigInt(ethers.randomBytes(31)).toString();
+                localStorage.setItem(`secret_${email}`, storedSecret);
+            }
+            setSecret(storedSecret);
+        } catch (error) {
+            console.error(error);
+            alert("Eroare la autentificare");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSignup = async () => {
+        if (!email || !password) {
+            return alert("Completează email-ul și parola!");
+        }
+
+        if (password.length < 6) {
+            return alert("Parola trebuie să aibă minim 6 caractere!");
+        }
+
+        setLoading(true);
+        try {
+            const res = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+                alert(data.error);
+                setLoading(false);
+                return;
+            }
+
+            alert(`Cont creat cu succes! Bun venit, ${data.student.nume}!`);
+            setAuthData(data.student);
+
+            const newSecret = ethers.toBigInt(ethers.randomBytes(31)).toString();
+            localStorage.setItem(`secret_${email}`, newSecret);
+            setSecret(newSecret);
+        } catch (error) {
+            console.error(error);
+            alert("Eroare la crearea contului");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleEnroll = async (predicateId: string) => {
@@ -204,14 +267,14 @@ export default function StudentPage() {
                             color: '#1a202c',
                             fontWeight: '700'
                         }}>
-                            Portal Student
+                            {isSignupMode ? 'Creează Cont' : 'Portal Student'}
                         </h2>
                         <p style={{ margin: '0', color: '#718096', fontSize: '14px' }}>
-                            Autentifică-te pentru a accesa credențialele
+                            {isSignupMode ? 'Înregistrează-te cu email-ul universitar' : 'Autentifică-te pentru a accesa credențialele'}
                         </p>
                     </div>
 
-                    <div style={{ marginBottom: '24px' }}>
+                    <div style={{ marginBottom: '20px' }}>
                         <label style={{
                             display: 'block',
                             marginBottom: '8px',
@@ -222,9 +285,9 @@ export default function StudentPage() {
                             Email Universitar
                         </label>
                         <input
+                            type="email"
                             value={email}
                             onChange={e => setEmail(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                             placeholder="nume.prenume@s.unibuc.ro"
                             style={{
                                 width: '100%',
@@ -242,8 +305,41 @@ export default function StudentPage() {
                         />
                     </div>
 
+                    <div style={{ marginBottom: '24px' }}>
+                        <label style={{
+                            display: 'block',
+                            marginBottom: '8px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#4a5568'
+                        }}>
+                            Parolă
+                        </label>
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && (isSignupMode ? handleSignup() : handleLogin())}
+                            placeholder={isSignupMode ? "Minim 6 caractere" : "Introdu parola"}
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                border: '2px solid #e2e8f0',
+                                borderRadius: '10px',
+                                fontSize: '15px',
+                                color: '#2d3748',
+                                outline: 'none',
+                                transition: 'all 0.3s ease',
+                                boxSizing: 'border-box'
+                            }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#667eea'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
+                        />
+                    </div>
+
                     <button
-                        onClick={handleLogin}
+                        onClick={isSignupMode ? handleSignup : handleLogin}
+                        disabled={loading}
                         style={{
                             width: '100%',
                             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -266,8 +362,31 @@ export default function StudentPage() {
                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
                         }}
                     >
-                        Autentificare
+                        {loading ? 'Se procesează...' : (isSignupMode ? 'Creează Cont' : 'Autentificare')}
                     </button>
+
+                    <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                        <p style={{ fontSize: '14px', color: '#718096', marginBottom: '8px' }}>
+                            {isSignupMode ? 'Ai deja cont?' : 'Nu ai cont?'}
+                        </p>
+                        <button
+                            onClick={() => {
+                                setIsSignupMode(!isSignupMode);
+                                setPassword('');
+                            }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#667eea',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                textDecoration: 'underline'
+                            }}
+                        >
+                            {isSignupMode ? 'Autentifică-te aici' : 'Creează cont nou'}
+                        </button>
+                    </div>
                 </div>
             </div>
         );
