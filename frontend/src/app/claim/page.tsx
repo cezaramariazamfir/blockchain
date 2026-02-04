@@ -266,7 +266,17 @@ export default function StudentPage() {
             const signer = await provider.getSigner();
             const contract = new ethers.Contract(CONTRACT_ADDRESSES.AcademicCredentials, CREDENTIALS_ABI, signer);
 
-            const tx = await contract.claimCredential(predicateId, jsonProof[0], jsonProof[1], jsonProof[2], jsonProof[3]);
+            // Citim taxa de eliberare din contract
+            const issuanceFee = await contract.getIssuanceFee();
+
+            const tx = await contract.claimCredential(
+                predicateId,
+                jsonProof[0],
+                jsonProof[1],
+                jsonProof[2],
+                jsonProof[3],
+                { value: issuanceFee }
+            );
             await tx.wait();
 
             // Salvăm în localStorage că a claim-uit
