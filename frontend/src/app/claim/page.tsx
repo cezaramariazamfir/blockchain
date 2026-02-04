@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import { MerkleService } from '@/lib/merkle';
 import { CONTRACT_ADDRESSES, CREDENTIALS_ABI } from '@/lib/constants';
@@ -17,6 +17,7 @@ export default function StudentPage() {
     const [snarkjs, setSnarkjs] = useState<any>(null);
     const [claimedDiplomas, setClaimedDiplomas] = useState<Set<string>>(new Set());
     const [enrolledCategories, setEnrolledCategories] = useState<Set<string>>(new Set());
+    const contractRef = useRef<ethers.Contract | null>(null); // Ref pentru cleanup corect
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -27,6 +28,9 @@ export default function StudentPage() {
     // OBSERVER PATTERN: Ascultam evenimentul CredentialClaimed din blockchain
     useEffect(() => {
         const setupEventListener = async () => {
+            // Evitam setup multiplu (React Strict Mode)
+            if (contractRef.current) return;
+
             if (typeof window !== 'undefined' && (window as any).ethereum) {
                 try {
                     const provider = new ethers.BrowserProvider((window as any).ethereum);
@@ -35,6 +39,9 @@ export default function StudentPage() {
                         CREDENTIALS_ABI,
                         provider
                     );
+
+                    // Salvam referinta pentru cleanup
+                    contractRef.current = contract;
 
                     // Ne abonam la evenimentul CredentialClaimed
                     contract.on("CredentialClaimed", (student, predicateId, nullifier, tokenId, feePaid) => {
@@ -57,16 +64,11 @@ export default function StudentPage() {
 
         setupEventListener();
 
-        // Cleanup: dezabonare la unmount
+        // Cleanup: dezabonare la unmount (folosim ACELASI contract)
         return () => {
-            if (typeof window !== 'undefined' && (window as any).ethereum) {
-                const provider = new ethers.BrowserProvider((window as any).ethereum);
-                const contract = new ethers.Contract(
-                    CONTRACT_ADDRESSES.AcademicCredentials,
-                    CREDENTIALS_ABI,
-                    provider
-                );
-                contract.removeAllListeners("CredentialClaimed");
+            if (contractRef.current) {
+                contractRef.current.removeAllListeners("CredentialClaimed");
+                contractRef.current = null;
             }
         };
     }, []);

@@ -4,7 +4,7 @@
 // - decide când să "sigileze" lista și să o trimită pe Blockchain sub formă de Merkle Root
 'use client'; //ii spun browserului ca aceasta pagina e interactiva (are butoane)
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ethers } from 'ethers';
 import { MerkleService } from '@/lib/merkle';
 import { CONTRACT_ADDRESSES, REGISTRY_ABI } from '@/lib/constants';
@@ -17,6 +17,7 @@ export default function AdminPage() {
     const [selectedPredicate, setSelectedPredicate] = useState<string | null>(null);
     const [searchEmail, setSearchEmail] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
+    const contractRef = useRef<ethers.Contract | null>(null); // Ref pentru contract (cleanup corect)
 
     // Încărcăm commitment-urile primite de la studenți din baza de date (API)
     const fetchEnrollments = async () => {
@@ -39,6 +40,9 @@ export default function AdminPage() {
         // OBSERVER PATTERN: Ascultam evenimentul MerkleRootUpdated din blockchain
         // Cand ORICINE publica un nou Merkle root, vom fi notificati automat
         const setupEventListener = async () => {
+            // Evitam setup multiplu (React Strict Mode)
+            if (contractRef.current) return;
+
             if (typeof window !== 'undefined' && (window as any).ethereum) {
                 try {
                     const provider = new ethers.BrowserProvider((window as any).ethereum);
@@ -47,6 +51,9 @@ export default function AdminPage() {
                         REGISTRY_ABI,
                         provider
                     );
+
+                    // Salvam referinta pentru cleanup
+                    contractRef.current = contract;
 
                     // Ne abonam la evenimentul MerkleRootUpdated
                     contract.on("MerkleRootUpdated", (predicateId, oldRoot, newRoot) => {
@@ -68,16 +75,11 @@ export default function AdminPage() {
 
         setupEventListener();
 
-        // Cleanup: dezabonare la unmount
+        // Cleanup: dezabonare la unmount (folosim ACELASI contract)
         return () => {
-            if (typeof window !== 'undefined' && (window as any).ethereum) {
-                const provider = new ethers.BrowserProvider((window as any).ethereum);
-                const contract = new ethers.Contract(
-                    CONTRACT_ADDRESSES.IdentityRegistry,
-                    REGISTRY_ABI,
-                    provider
-                );
-                contract.removeAllListeners("MerkleRootUpdated");
+            if (contractRef.current) {
+                contractRef.current.removeAllListeners("MerkleRootUpdated");
+                contractRef.current = null;
             }
         };
     }, []);
