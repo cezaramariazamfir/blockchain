@@ -9,10 +9,14 @@ export const CONTRACT_ADDRESSES = {
 // ABI-ul necesar pentru ca AdminPage să poată interacționa cu IdentityRegistry
 export const REGISTRY_ABI = [
     "function updateMerkleRoot(uint256 predicateId, bytes32 newRoot) external",
-    "function getMerkleRoot(uint256 predicateId) view returns (bytes32)"
+    "function getMerkleRoot(uint256 predicateId) view returns (bytes32)",
+    // Event pentru Observer Pattern
+    "event MerkleRootUpdated(uint256 indexed predicateId, bytes32 indexed oldRoot, bytes32 indexed newRoot)"
 ];
 
 // ABI-ul necesar pentru ca StudentPage să poată chema funcția de claim
 export const CREDENTIALS_ABI = [
-    "function claimCredential(uint256 predicateId, uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[3] input) external payable"
+    "function claimCredential(uint256 predicateId, uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[3] input) external payable",
+    // Event pentru Observer Pattern
+    "event CredentialClaimed(address indexed student, uint256 indexed predicateId, bytes32 indexed nullifier, uint256 tokenId, uint256 feePaid)"
 ];

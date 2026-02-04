@@ -35,6 +35,51 @@ export default function AdminPage() {
     useEffect(() => {
         fetchEnrollments();
         fetchRegistrationState();
+
+        // OBSERVER PATTERN: Ascultam evenimentul MerkleRootUpdated din blockchain
+        // Cand ORICINE publica un nou Merkle root, vom fi notificati automat
+        const setupEventListener = async () => {
+            if (typeof window !== 'undefined' && (window as any).ethereum) {
+                try {
+                    const provider = new ethers.BrowserProvider((window as any).ethereum);
+                    const contract = new ethers.Contract(
+                        CONTRACT_ADDRESSES.IdentityRegistry,
+                        REGISTRY_ABI,
+                        provider
+                    );
+
+                    // Ne abonam la evenimentul MerkleRootUpdated
+                    contract.on("MerkleRootUpdated", (predicateId, oldRoot, newRoot) => {
+                        console.log(`[EVENT] MerkleRootUpdated pentru predicat ${predicateId}`);
+                        console.log(`  Old root: ${oldRoot}`);
+                        console.log(`  New root: ${newRoot}`);
+
+                        // Actualizam UI-ul automat cand detectam evenimentul
+                        alert(`Merkle root actualizat pentru categoria ${predicateId}!`);
+                        fetchEnrollments();
+                    });
+
+                    console.log("Event listener activ pentru MerkleRootUpdated");
+                } catch (error) {
+                    console.error("Eroare la setup event listener:", error);
+                }
+            }
+        };
+
+        setupEventListener();
+
+        // Cleanup: dezabonare la unmount
+        return () => {
+            if (typeof window !== 'undefined' && (window as any).ethereum) {
+                const provider = new ethers.BrowserProvider((window as any).ethereum);
+                const contract = new ethers.Contract(
+                    CONTRACT_ADDRESSES.IdentityRegistry,
+                    REGISTRY_ABI,
+                    provider
+                );
+                contract.removeAllListeners("MerkleRootUpdated");
+            }
+        };
     }, []);
 
     // Deschide înscrierea

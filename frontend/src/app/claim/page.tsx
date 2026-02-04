@@ -24,8 +24,55 @@ export default function StudentPage() {
         }
     }, []);
 
+    // OBSERVER PATTERN: Ascultam evenimentul CredentialClaimed din blockchain
     useEffect(() => {
-        // Încărcăm diploma claim-uite din localStorage
+        const setupEventListener = async () => {
+            if (typeof window !== 'undefined' && (window as any).ethereum) {
+                try {
+                    const provider = new ethers.BrowserProvider((window as any).ethereum);
+                    const contract = new ethers.Contract(
+                        CONTRACT_ADDRESSES.AcademicCredentials,
+                        CREDENTIALS_ABI,
+                        provider
+                    );
+
+                    // Ne abonam la evenimentul CredentialClaimed
+                    contract.on("CredentialClaimed", (student, predicateId, nullifier, tokenId, feePaid) => {
+                        console.log(`[EVENT] CredentialClaimed detectat!`);
+                        console.log(`  Student: ${student}`);
+                        console.log(`  Predicat: ${predicateId}`);
+                        console.log(`  Token ID: ${tokenId}`);
+
+                        // Notificare cand cineva primeste o diploma
+                        const predicateName = predicates[predicateId.toString() as keyof typeof predicates];
+                        console.log(`O diploma "${predicateName}" a fost emisa!`);
+                    });
+
+                    console.log("Event listener activ pentru CredentialClaimed");
+                } catch (error) {
+                    console.error("Eroare la setup event listener:", error);
+                }
+            }
+        };
+
+        setupEventListener();
+
+        // Cleanup: dezabonare la unmount
+        return () => {
+            if (typeof window !== 'undefined' && (window as any).ethereum) {
+                const provider = new ethers.BrowserProvider((window as any).ethereum);
+                const contract = new ethers.Contract(
+                    CONTRACT_ADDRESSES.AcademicCredentials,
+                    CREDENTIALS_ABI,
+                    provider
+                );
+                contract.removeAllListeners("CredentialClaimed");
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        // Incarcam diploma claim-uite din localStorage
         if (email) {
             const claimed = localStorage.getItem(`claimed_${email}`);
             if (claimed) {
