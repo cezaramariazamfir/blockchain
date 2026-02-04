@@ -16,7 +16,7 @@ export async function POST(request: Request) {
 
         if (state !== 'open' && state !== 'closed') {
             return NextResponse.json(
-                { error: 'State invalid. Folosește "open" sau "closed"' },
+                { error: 'State invalid. Foloseste "open" sau "closed"' },
                 { status: 400 }
             );
         }
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
             success: true,
             predicateId,
             state,
-            message: `Înscrierea a fost ${state === 'open' ? 'deschisă' : 'închisă'}`
+            message: `Inscrierea a fost ${state === 'open' ? 'deschisa' : 'inchisa'}`
         });
 
     } catch (error) {

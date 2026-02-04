@@ -165,7 +165,7 @@ contract SoulboundToken is ERC721 {
         return string(abi.encodePacked("data:application/json;base64,", json));
     }
 
-    // Generează SVG-ul spectaculos pentru diplomă
+    // Generează SVG-ul 
     function generateSVG(uint256 tokenId, string memory predicateName) internal pure returns (string memory) {
         return string(
             abi.encodePacked(
@@ -229,7 +229,7 @@ contract SoulboundToken is ERC721 {
     // Mapează predicateId la nume lizibil
     function getPredicateName(uint256 predicateId) internal pure returns (string memory) {
         if (predicateId == 0) return "Student FMI";
-        if (predicateId == 1) return "Anul 3 Studii";
+        if (predicateId == 1) return "Student Anul 3";
         if (predicateId == 2) return "Student Master";
         return string(abi.encodePacked("Credential #", Strings.toString(predicateId)));
     }

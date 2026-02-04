@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         const regState = await RegistrationState.findOne({ predicateId: String(predicateId) });
         if (!regState || regState.state !== 'open') {
             return NextResponse.json(
-                { error: 'Înscrierea este închisă pentru această categorie!' },
+                { error: 'Inscrierea este inchisa pentru aceasta categorie!' },
                 { status: 403 }
             );
         }
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
         if (existing) {
             return NextResponse.json(
-                { error: 'Ești deja înscris pentru această categorie!' },
+                { error: 'Esti deja inscris pentru aceasta categorie!' },
                 { status: 409 }
             );
         }
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            message: 'Înscrierea a fost înregistrată cu succes!'
+            message: 'Inscrierea a fost inregistrata cu succes!'
         });
 
     } catch (error) {

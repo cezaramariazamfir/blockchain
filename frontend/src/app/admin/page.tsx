@@ -52,7 +52,7 @@ export default function AdminPage() {
             }
         } catch (error) {
             console.error('Eroare:', error);
-            alert('Eroare la deschiderea înscrierii');
+            alert('Eroare la deschiderea inscrierii');
         }
     };
 
@@ -71,7 +71,7 @@ export default function AdminPage() {
             }
         } catch (error) {
             console.error('Eroare:', error);
-            alert('Eroare la închiderea înscrierii');
+            alert('Eroare la inchiderea inscrierii');
         }
     };
 
@@ -136,7 +136,7 @@ export default function AdminPage() {
             }
         } catch (error) {
             console.error('Eroare:', error);
-            alert('Eroare la adăugare student');
+            alert('Eroare la adaugare student');
         }
     };
 
@@ -200,7 +200,7 @@ export default function AdminPage() {
     const handlePublishRoot = async (predicateId: string) => {
         // Verificăm dacă înscrierea este închisă
         if (registrationState[predicateId] === 'open') {
-            return alert("Trebuie să închizi mai întâi înscrierea înainte de a publica root-ul!");
+            return alert("Trebuie sa inchizi mai intai inscrierea inainte de a publica root-ul!");
         }
 
         setLoading(prev => ({ ...prev, [predicateId]: true }));
@@ -212,7 +212,7 @@ export default function AdminPage() {
 
         if (!commitments || commitments.length === 0) {
             setLoading(prev => ({ ...prev, [predicateId]: false }));
-            return alert("Nu există înscrieri!");
+            return alert("Nu exista inscrieri!");
         }
         try {
             const merkleService = new MerkleService();
@@ -283,7 +283,7 @@ export default function AdminPage() {
                 }) 
             });
 
-            alert(`Succes! Rădăcina pentru "${predicates[predicateId as keyof typeof predicates]}" a fost publicată pe Sepolia.`);
+            alert(`Succes! Radacina pentru "${predicates[predicateId as keyof typeof predicates]}" a fost publicata pe Sepolia.`);
             fetchEnrollments(); // Reîmprospătăm datele în UI
 
         } catch (error: any) {
@@ -316,10 +316,10 @@ export default function AdminPage() {
                         fontWeight: '800',
                         letterSpacing: '-0.5px'
                     }}>
-                        🎓 Panou Administrare Facultate
+                        Panou Administrare Facultate
                     </h1>
                     <p style={{ margin: '5px 0 0 0', color: '#4a5568', fontSize: '14px' }}>
-                        Gestionare înscrieri și publicare credențiale blockchain
+                        Gestionare inscrieri si publicare credentiale blockchain
                     </p>
                 </div>
             </nav>
@@ -390,8 +390,7 @@ export default function AdminPage() {
                                             : '0 4px 12px rgba(239, 68, 68, 0.4)',
                                         animation: isOpen ? 'pulse 2s infinite' : 'none'
                                     }}>
-                                        <span style={{ marginRight: '6px' }}>{isOpen ? '🟢' : '🔴'}</span>
-                                        {isOpen ? 'Înscriere DESCHISĂ' : 'Înscriere ÎNCHISĂ'}
+                                        {isOpen ? 'Inscriere DESCHISA' : 'Inscriere INCHISA'}
                                     </div>
                                 </div>
                             </div>
@@ -414,11 +413,10 @@ export default function AdminPage() {
                                         justifyContent: 'center',
                                         fontSize: '24px'
                                     }}>
-                                        👥
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '13px', color: '#718096', fontWeight: '500' }}>
-                                            Studenți înscriși
+                                            Studenti inscrisi
                                         </div>
                                         <div style={{ fontSize: '28px', fontWeight: '700', color: '#2d3748' }}>
                                             {enrollmentCount}
@@ -467,7 +465,7 @@ export default function AdminPage() {
                                         }
                                     }}
                                 >
-                                    ✅ Start Înscriere
+                                    Start Inscriere
                                 </button>
 
                                 <button
@@ -502,7 +500,7 @@ export default function AdminPage() {
                                         }
                                     }}
                                 >
-                                    ⏸️ Stop Înscriere
+                                    Stop Inscriere
                                 </button>
 
                                 <button
@@ -538,7 +536,7 @@ export default function AdminPage() {
                                         }
                                     }}
                                 >
-                                    🚀 Publică Root pe Blockchain
+                                    Publica Root pe Blockchain
                                 </button>
 
                                 <button
@@ -573,7 +571,7 @@ export default function AdminPage() {
                                         }
                                     }}
                                 >
-                                    ➕ Adaugă Student
+                                    Adauga Student
                                 </button>
                             </div>
 
@@ -589,7 +587,7 @@ export default function AdminPage() {
                                     fontSize: '14px',
                                     fontWeight: '600'
                                 }}>
-                                    ⏳ Se procesează...
+                                    Se proceseaza...
                                 </div>
                             )}
 
@@ -608,7 +606,7 @@ export default function AdminPage() {
                                         color: '#1e40af',
                                         fontWeight: '700'
                                     }}>
-                                        🔍 Adaugă studenți la această categorie
+                                        Adauga studenti la aceasta categorie
                                     </h4>
 
                                     {/* Input de căutare */}
@@ -616,7 +614,7 @@ export default function AdminPage() {
                                         type="text"
                                         value={searchEmail}
                                         onChange={handleSearchChange}
-                                        placeholder="Caută după email..."
+                                        placeholder="Cauta dupa email..."
                                         style={{
                                             width: '100%',
                                             padding: '12px 16px',
@@ -654,7 +652,7 @@ export default function AdminPage() {
                                                     marginBottom: '8px',
                                                     padding: '0 8px'
                                                 }}>
-                                                    {searchResults.length} student{searchResults.length !== 1 ? 'i' : ''} găsit{searchResults.length !== 1 ? 'i' : ''}
+                                                    {searchResults.length} student{searchResults.length !== 1 ? 'i' : ''} gasit{searchResults.length !== 1 ? 'i' : ''}
                                                 </div>
                                                 {searchResults.map((student) => (
                                                     <div
@@ -727,7 +725,7 @@ export default function AdminPage() {
                                                                 e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.2)';
                                                             }}
                                                         >
-                                                            ✅ Adaugă
+                                                            Adauga
                                                         </button>
                                                     </div>
                                                 ))}
@@ -740,8 +738,8 @@ export default function AdminPage() {
                                                 fontSize: '14px'
                                             }}>
                                                 {searchEmail
-                                                    ? 'Nu s-au găsit studenți pentru această căutare.'
-                                                    : 'Toți studenții au deja permisiune pentru această categorie.'}
+                                                    ? 'Nu s-au gasit studenti pentru aceasta cautare.'
+                                                    : 'Toti studentii au deja permisiune pentru aceasta categorie.'}
                                             </div>
                                         )}
                                     </div>
@@ -773,7 +771,7 @@ export default function AdminPage() {
                                             e.currentTarget.style.background = '#e5e7eb';
                                         }}
                                     >
-                                        ✖️ Închide
+                                        Inchide
                                     </button>
                                 </div>
                             )}

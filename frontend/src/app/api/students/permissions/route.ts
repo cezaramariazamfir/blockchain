@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
         if (!studentId || predicateId === undefined || value === undefined) {
             return NextResponse.json({
-                error: 'studentId, predicateId și value sunt obligatorii'
+                error: 'studentId, predicateId si value sunt obligatorii'
             }, { status: 400 });
         }
 
@@ -23,18 +23,18 @@ export async function POST(request: Request) {
         // Găsim studentul
         const student = await Student.findById(studentId);
         if (!student) {
-            return NextResponse.json({ error: 'Student negăsit' }, { status: 404 });
+            return NextResponse.json({ error: 'Student negasit' }, { status: 404 });
         }
 
         // Actualizăm permisiunea
         student.permissions[predicateIndex] = value;
-        await student.save();
+        await student.save({ validateModifiedOnly: true });
 
         console.log(`Permisiune actualizată pentru ${student.email}: permissions[${predicateIndex}] = ${value}`);
 
         return NextResponse.json({
             success: true,
-            message: `Permisiune ${value ? 'adăugată' : 'revocată'} cu succes!`,
+            message: `Permisiune ${value ? 'adaugata' : 'revocata'} cu succes!`,
             student: {
                 _id: student._id,
                 nume: student.nume,

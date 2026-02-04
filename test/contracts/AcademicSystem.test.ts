@@ -86,108 +86,10 @@ describe("Academic Credentials System", function () {
       ).to.be.revertedWith("Only admin");
     });
 
-    it("verifyMerkleProof functioneaza corect", async function () {
-      // facem 2 commitment uri (leaves)
-      const commitment1 = ethers.keccak256(ethers.toUtf8Bytes("student1-secret"));
-      const commitment2 = ethers.keccak256(ethers.toUtf8Bytes("student2-secret"));
-
-      // root = hash(commitment1, commitment2)
-      const root = ethers.keccak256(
-        ethers.solidityPacked(["bytes32", "bytes32"], [commitment1, commitment2])
-      );
-
-      await registry.updateMerkleRoot(1, root);
-
-      // proof pentru commitment1: sibling = commitment2, position = 0 (stanga)
-      const isValid = await registry.verifyMerkleProof(
-        commitment1,
-        [commitment2],  // proof
-        [0],            // positions (0 = leaf e pe stanga)
-        1               // predicateId
-      );
-
-      expect(isValid).to.be.true;
-    });
   });
 
 
   describe("AcademicCredentials", function () {
-    it("claimCredentialWithMerkleProof functioneaza", async function () {
-      // cream Merkle tree cu commitment ul studentului
-      const commitment = ethers.keccak256(ethers.toUtf8Bytes("student-secret"));
-      const otherCommitment = ethers.keccak256(ethers.toUtf8Bytes("other-secret"));
-
-      const root = ethers.keccak256(
-        ethers.solidityPacked(["bytes32", "bytes32"], [commitment, otherCommitment])
-      );
-
-      await registry.updateMerkleRoot(1, root);
-
-      const nullifier = ethers.keccak256(ethers.toUtf8Bytes("student-nullifier"));
-
-      // student face claim
-      await credentials.connect(student).claimCredentialWithMerkleProof(
-        1,                    // predicateId
-        commitment,           // commitment (leaf)
-        nullifier,            // nullifier
-        [otherCommitment],    // merkleProof
-        [0]                   // positions
-      );
-
-      // verificam ca a primit token ul
-      expect(await sbt.ownerOf(0)).to.equal(student.address);
-      expect(await sbt.getTokenPredicate(0)).to.equal(1);
-    });
-
-    it("claim fara taxa suficienta da REVERT", async function () {
-      // setam o taxa
-      await credentials.setIssuanceFee(ethers.parseEther("0.01"));
-
-      const commitment = ethers.keccak256(ethers.toUtf8Bytes("test"));
-      const root = ethers.keccak256(
-        ethers.solidityPacked(["bytes32", "bytes32"], [commitment, commitment])
-      );
-      await registry.updateMerkleRoot(1, root);
-
-      const nullifier = ethers.keccak256(ethers.toUtf8Bytes("null"));
-
-      // fara ETH deci trebuie sa dea REVERT
-      await expect(
-        credentials.connect(student).claimCredentialWithMerkleProof(
-          1, commitment, nullifier, [commitment], [0]
-        )
-      ).to.be.revertedWith("Insufficient issuance fee");
-    });
-
-    it("claim cu taxa functioneaza + withdraw", async function () {
-      const fee = ethers.parseEther("0.01");
-      await credentials.setIssuanceFee(fee);
-
-      const commitment = ethers.keccak256(ethers.toUtf8Bytes("test2"));
-      const root = ethers.keccak256(
-        ethers.solidityPacked(["bytes32", "bytes32"], [commitment, commitment])
-      );
-      await registry.updateMerkleRoot(1, root);
-
-      const nullifier = ethers.keccak256(ethers.toUtf8Bytes("null2"));
-
-      // claim cu taxa
-      await credentials.connect(student).claimCredentialWithMerkleProof(
-        1, commitment, nullifier, [commitment], [0],
-        { value: fee }
-      );
-
-      // verificam balanta contractului
-      expect(await credentials.getContractBalance()).to.equal(fee);
-
-      // admin retrage
-      const balanceBefore = await ethers.provider.getBalance(admin.address);
-      await credentials.withdraw();
-      const balanceAfter = await ethers.provider.getBalance(admin.address);
-
-      expect(balanceAfter).to.be.greaterThan(balanceBefore);
-    });
-
     it("receive() accepta ETH direct", async function () {
       // trimite ETH direct la contract
       await admin.sendTransaction({

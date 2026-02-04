@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
         if (!email || !password) {
             return NextResponse.json(
-                { error: 'Email-ul și parola sunt obligatorii' },
+                { error: 'Email-ul si parola sunt obligatorii' },
                 { status: 400 }
             );
         }
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         // Validare parolă (minim 6 caractere)
         if (password.length < 6) {
             return NextResponse.json({
-                error: 'Parola trebuie să aibă minim 6 caractere'
+                error: 'Parola trebuie sa aiba minim 6 caractere'
             }, { status: 400 });
         }
 
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         const existingStudent = await Student.findOne({ email: email.toLowerCase() });
         if (existingStudent) {
             return NextResponse.json({
-                error: 'Acest email este deja înregistrat! Folosește funcția de Login.'
+                error: 'Acest email este deja inregistrat! Foloseste functia de Login.'
             }, { status: 409 });
         }
 

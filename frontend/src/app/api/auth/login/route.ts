@@ -9,7 +9,7 @@ export async function POST(request: Request) {
 
         if (!email || !password) {
             return NextResponse.json(
-                { error: 'Email-ul și parola sunt obligatorii' },
+                { error: 'Email-ul si parola sunt obligatorii' },
                 { status: 400 }
             );
         }
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
         if (!student) {
             return NextResponse.json({
-                error: 'Email sau parolă incorectă!'
+                error: 'Email sau parola incorecta!'
             }, { status: 401 });
         }
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
         if (!isPasswordValid) {
             return NextResponse.json({
-                error: 'Email sau parolă incorectă!'
+                error: 'Email sau parola incorecta!'
             }, { status: 401 });
         }
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            message: 'Autentificare reușită!',
+            message: 'Autentificare reusita!',
             student: {
                 nume: student.nume,
                 email: student.email,

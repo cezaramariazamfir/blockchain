@@ -14,7 +14,7 @@ pragma solidity ^0.8.20;
 interface ISoulboundToken { 
     //functia care creeaza un token nou
     function mint(address to,           //identificator unic al contului/portofelului studentului pe blockchain
-                uint256 predicateId,    //numar intreg ce reprezinta categoria = ce criteriu a indeplinit studentul ("Student la FMI"?, "Media peste 8"?)
+                uint256 predicateId,    //numar intreg ce reprezinta categoria = ce criteriu a indeplinit studentul ("Student la FMI"?, "Student la Master"?)
                 bytes32 nullifier       //rezultatul unei fctii hash Poseidon,
                                         // nullifier = Poseidon(secret, predicateId) = amprenta digitala unica pe 32B care ma ajuta sa decid unicitatea cererii (fara a dezvalui cine e studentul)
                 ) external returns (uint256);

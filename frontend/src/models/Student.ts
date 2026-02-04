@@ -33,9 +33,6 @@ const StudentSchema: Schema = new Schema({
     timestamps: true
 });
 
-// Index pentru căutare rapidă după email
-StudentSchema.index({ email: 1 });
-
 // Ștergem modelul din cache dacă există pentru a forța reîncărcarea
 if (mongoose.models.Student) {
     delete mongoose.models.Student;

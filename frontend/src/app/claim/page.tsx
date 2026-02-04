@@ -40,7 +40,7 @@ export default function StudentPage() {
 
     const handleLogin = async () => {
         if (!email || !password) {
-            return alert("Completează email-ul și parola!");
+            return alert("Completeaza email-ul si parola!");
         }
 
         setLoading(true);
@@ -78,11 +78,11 @@ export default function StudentPage() {
 
     const handleSignup = async () => {
         if (!email || !password) {
-            return alert("Completează email-ul și parola!");
+            return alert("Completeaza email-ul si parola!");
         }
 
         if (password.length < 6) {
-            return alert("Parola trebuie să aibă minim 6 caractere!");
+            return alert("Parola trebuie sa aiba minim 6 caractere!");
         }
 
         setLoading(true);
@@ -132,30 +132,30 @@ export default function StudentPage() {
 
             if (res.status === 403) {
                 // Înscrierea este închisă
-                alert("⚠️ Înscrierea este închisă pentru această categorie! Contactează administratorul.");
+                alert("Inscrierea este inchisa pentru aceasta categorie! Contacteaza administratorul.");
                 setLoading(false);
                 return;
             }
 
             if (res.status === 409) {
                 // Deja înscris
-                alert("Ești deja înscris pentru această categorie!");
+                alert("Esti deja inscris pentru aceasta categorie!");
                 setLoading(false);
                 return;
             }
 
             if (res.ok) {
-                alert("Te-ai înscris cu succes!");
+                alert("Te-ai inscris cu succes!");
                 const newEnrolled = new Set(enrolledCategories);
                 newEnrolled.add(predicateId);
                 setEnrolledCategories(newEnrolled);
                 localStorage.setItem(`enrolled_${email}`, JSON.stringify(Array.from(newEnrolled)));
             } else {
-                alert(data.error || "Eroare la înscriere");
+                alert(data.error || "Eroare la inscriere");
             }
         } catch (error) {
             console.error(error);
-            alert("Eroare de rețea la înscriere");
+            alert("Eroare de retea la inscriere");
         } finally {
             setLoading(false);
         }
@@ -164,11 +164,11 @@ export default function StudentPage() {
     const handleClaim = async (predicateId: string) => {
         // Verificăm dacă a mai claim-uit deja
         if (claimedDiplomas.has(predicateId)) {
-            alert("Ai deja această diplomă! Nu poți revendica de două ori aceeași diploma!");
+            alert("Ai deja aceasta diploma! Nu poti revendica de doua ori aceeasi diploma!");
             return;
         }
 
-        if (!snarkjs) return alert("Eroare: snarkjs nu este încărcat!");
+        if (!snarkjs) return alert("Eroare: snarkjs nu este incarcat!");
 
         setLoading(true);
         try {
@@ -194,7 +194,7 @@ export default function StudentPage() {
             const myCommitment = merkleService.computeCommitment(secret);
             const myIndex = paddedCommitments.indexOf(myCommitment);
 
-            if (myIndex === -1) throw new Error("Nu ești înscris în această listă!");
+            if (myIndex === -1) throw new Error("Nu esti inscris in aceasta lista!");
 
             const proofData = await merkleService.getProofData(tree, myIndex);
 
@@ -228,13 +228,13 @@ export default function StudentPage() {
             setClaimedDiplomas(newClaimed);
             localStorage.setItem(`claimed_${email}`, JSON.stringify(Array.from(newClaimed)));
 
-            alert("Diplomă obținută cu succes!");
+            alert("Diploma obtinuta cu succes!");
         } catch (e: any) {
             console.error(e);
-            if (e.message?.includes("Nu ești înscris")) {
-                alert("Nu ești înscris sau adminul nu a publicat root-ul pe blockchain!");
+            if (e.message?.includes("Nu esti inscris")) {
+                alert("Nu esti inscris sau adminul nu a publicat root-ul pe blockchain!");
             } else {
-                alert("Eroare la claim! Verifică dacă adminul a publicat rădăcina.");
+                alert("Eroare la claim! Verifica daca adminul a publicat radacina.");
             }
         } finally {
             setLoading(false);
@@ -260,17 +260,17 @@ export default function StudentPage() {
                     width: '100%'
                 }}>
                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎓</div>
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
                         <h2 style={{
                             margin: '0 0 8px 0',
                             fontSize: '28px',
                             color: '#1a202c',
                             fontWeight: '700'
                         }}>
-                            {isSignupMode ? 'Creează Cont' : 'Portal Student'}
+                            {isSignupMode ? 'Creeaza Cont' : 'Portal Student'}
                         </h2>
                         <p style={{ margin: '0', color: '#718096', fontSize: '14px' }}>
-                            {isSignupMode ? 'Înregistrează-te cu email-ul universitar' : 'Autentifică-te pentru a accesa credențialele'}
+                            {isSignupMode ? 'Inregistreaza-te cu email-ul universitar' : 'Autentifica-te pentru a accesa credentialele'}
                         </p>
                     </div>
 
@@ -313,7 +313,7 @@ export default function StudentPage() {
                             fontWeight: '600',
                             color: '#4a5568'
                         }}>
-                            Parolă
+                            Parola
                         </label>
                         <input
                             type="password"
@@ -362,7 +362,7 @@ export default function StudentPage() {
                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
                         }}
                     >
-                        {loading ? 'Se procesează...' : (isSignupMode ? 'Creează Cont' : 'Autentificare')}
+                        {loading ? 'Se proceseaza...' : (isSignupMode ? 'Creeaza Cont' : 'Autentificare')}
                     </button>
 
                     <div style={{ marginTop: '20px', textAlign: 'center' }}>
@@ -384,7 +384,7 @@ export default function StudentPage() {
                                 textDecoration: 'underline'
                             }}
                         >
-                            {isSignupMode ? 'Autentifică-te aici' : 'Creează cont nou'}
+                            {isSignupMode ? 'Autentifica-te aici' : 'Creeaza cont nou'}
                         </button>
                     </div>
                 </div>
@@ -417,7 +417,7 @@ export default function StudentPage() {
                         Salut, {authData.nume}!
                     </h1>
                     <p style={{ margin: '5px 0 0 0', color: '#4a5568', fontSize: '14px' }}>
-                        Secretul tău este salvat securizat în browser
+                        Secretul tau este salvat securizat in browser
                     </p>
                 </div>
             </nav>
@@ -486,7 +486,7 @@ export default function StudentPage() {
                                             boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)'
                                         }}>
                                             
-                                            Diplomă Obținută
+                                            Diploma Obtinuta
                                         </div>
                                     )}
                                 </div>
@@ -530,7 +530,7 @@ export default function StudentPage() {
                                         }
                                     }}
                                 >
-                                    Înscrie-te
+                                    Inscrie-te
                                 </button>
 
                                 <button
@@ -565,7 +565,7 @@ export default function StudentPage() {
                                         }
                                     }}
                                 >
-                                    Claim Diplomă
+                                    Claim Diploma
                                 </button>
                             </div>
 
@@ -581,7 +581,7 @@ export default function StudentPage() {
                                     fontSize: '14px',
                                     fontWeight: '600'
                                 }}>
-                                    ⏳ Se procesează...
+                                    Se proceseaza...
                                 </div>
                             )}
                         </div>
